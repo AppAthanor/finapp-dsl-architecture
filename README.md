@@ -1,3 +1,3 @@
 # FinApp DSL Documentation
-
-This branch contains the documentation for the FinApp DSL project.
+This repository hosts the API documentation for the FinApp DSL project.
+Visit: https://appanthanor.github.io/finapp-dsl-architecture/
