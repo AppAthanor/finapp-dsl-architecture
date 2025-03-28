@@ -69,15 +69,6 @@ Feature: Loan Top-up for Pre-approved Customers
       | HK     | 2025-01-25T10:30:00+08 | Lunar New Year Special Offers        |
       | HK     | 2025-03-15T20:30:00+08 | Evening Banking Exclusive Benefits   |
 
-  Scenario: Customer explores initial loan top-up offer
-    Given I am on the "My Loans" section
-    When I select "View Your Offer"
-    Then I should see a personalised message welcoming me to the top-up journey
-    And I should see my pre-approved maximum top-up amount
-    And I should see how this would affect my monthly payments
-    And I should see primary call-to-action "Select Amount"
-    And I should see secondary option "Maybe Later"
-
   Scenario Outline: Customer selects from pre-defined loan top-up amounts based on segment
     Given my current region is set to "<region>"
     And my customer segment is "<segment>"

@@ -4,7 +4,7 @@ This repository contains Behaviour Driven Development (BDD) specifications for o
 
 ## Latest Addition: Loan Top-up Journey
 
-We've recently added the [Loan Top-up Journey](features/domains/loans/README.md), which demonstrates:
+We've recently added the [Loan Top-up Journey](features/domains/lending/README.md), which demonstrates:
 - Internationalization for UK and Hong Kong markets
 - Customer segmentation (Basic and Wealth)
 - Time-sensitive content handling
@@ -21,7 +21,7 @@ bdd-specifications/
 │   ├── domains/                  # Organised by business domains
 │   │   ├── authentication/       # Authentication features
 │   │   ├── payments/             # Payment features
-│   │   ├── loans/                # Loan features (including loan top-up)
+│   │   ├── lending/              # Lending features (including loan top-up)
 │   │   └── ...                   # Other domains
 │   ├── cross-cutting/            # Cross-domain features
 │   └── meta/                     # Features about the BDD process itself
@@ -34,13 +34,11 @@ bdd-specifications/
 ├── templates/                    # Reusable templates
 │
 ├── dsl/                          # Domain-specific language definitions
-│   ├── banking-terms.json        # Banking terminology
 │   └── loan-topup-functional-dsl.js # Functional DSL for loan top-up
 │
 ├── docs/                         # Documentation
 │   ├── getting-started.md
-│   ├── best-practices.md
-│   └── loan-topup-dsl-explanation.md # Explanation of functional DSL approach
+│   └── best-practices.md
 │
 ├── tools/                        # Utilities specific to BDD
 │
@@ -83,7 +81,7 @@ bdd-specifications/
 npm test
 
 # Run tests for a specific domain
-npm test -- --tags @loans
+npm test -- --tags @lending
 
 # Run tests for a specific feature
 npm test -- --tags @loan-topup
@@ -102,7 +100,18 @@ The Loan Top-up journey introduces a functional programming approach inspired by
 4. Creates clear abstraction barriers
 5. Makes rules analyzable and transformable
 
-For more details, see the [Loan Top-up DSL Explanation](docs/loan-topup-dsl-explanation.md).
+For more details, see the [Loan Top-up Feature README](features/domains/lending/README.md).
+
+## Key Domain Areas
+
+| Domain | Description | Key Features |
+|--------|-------------|--------------|
+| Authentication | User identity and access | Login, registration, account recovery |
+| Payments | Money transfers and payments | Domestic transfers, international payments, scheduled payments |
+| Lending | Borrowing products and services | Loan top-up, mortgage applications, overdrafts |
+| Accounts | Account management | Account opening, statements, transactions |
+| Cards | Card management | Card applications, PIN management, card controls |
+| Investments | Investment products | Trading, portfolios, fund selection |
 
 ## Contributing
 

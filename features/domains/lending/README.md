@@ -1,82 +1,36 @@
-# Loan Top-up Journey BDD Specifications
+# Lending Domain BDD Specifications
 
-This directory contains the Behaviour Driven Development (BDD) specifications for the Loan Top-up customer journey, including internationalization for multiple regions, customer segmentation, and time-sensitive content.
+This directory contains the Behaviour Driven Development (BDD) specifications for lending-related features, including the Loan Top-up journey.
 
-## Overview
+## Features
 
-The Loan Top-up journey allows pre-approved customers to borrow additional funds on their existing loan. This streamlined process eliminates the need for a full new loan application, providing customers with quick access to extra funds when needed.
+### Loan Top-up
 
-## Journey Flow
+The [Loan Top-up journey](loan-topup.feature) allows pre-approved customers to borrow additional funds on their existing loan without applying for a new loan. This streamlined process includes:
 
-1. **Initial Offer Screen**: Customer is presented with a personalised offer to borrow more
-2. **Amount Selection**: Customer selects or customises the additional amount they wish to borrow
-3. **Terms & Impact**: Customer reviews how the top-up affects their loan details
-4. **Confirmation**: Customer reviews and accepts the final offer
-5. **Disbursement**: Funds are made available in the customer's account
+- Initial offer presentation
+- Amount selection and customisation 
+- Terms and impact review
+- Confirmation and fund disbursement
 
-## Key Complexity Dimensions
+The implementation handles:
+- Multiple regions (UK and Hong Kong)
+- Different customer segments (Basic and Wealth)
+- Time-sensitive content (promotional offers, time-of-day messaging)
 
-### 1. Internationalization (UK and Hong Kong)
-- **Currency**: GBP (£) for UK and HKD ($) for Hong Kong
-- **Language**: English for UK, English and Traditional Chinese for Hong Kong
-- **Date Formats**: Regional date formatting standards
-- **Regulations**: FCA requirements for UK, HKMA requirements for Hong Kong
-- **Banking Hours**: Different processing timeframes based on local banking hours
+#### Key Files
 
-### 2. Customer Segmentation (Basic and Wealth)
-- **Interest Rates**: Different rates based on customer segment
-- **Borrowing Limits**: Higher amounts available for Wealth segment
-- **Benefits**: Segment-specific benefits and special offers
-- **Follow-up**: Different follow-up processes based on segment 
+- [loan-topup.feature](loan-topup.feature) - Gherkin feature file with scenarios
+- [loan-topup-steps.js](../../../step-definitions/domain-specific/loan-topup-steps.js) - Step implementations
+- [loan-topup-functional-dsl.js](../../../dsl/loan-topup-functional-dsl.js) - SICP-inspired functional DSL implementation
 
-### 3. Time-Sensitive Content
-- **Promotional Banners**: Seasonal offers displayed based on current date
-- **Service Hours Messaging**: Different messaging based on time of day
-- **Processing Timeframes**: Varied fund availability messaging based on banking hours
-- **Holiday Periods**: Special notices during bank holidays and festive periods
+#### Testing the Loan Top-up Journey
 
-## BDD Files Structure
-
-```
-features/domains/loans/
-└── loan-topup.feature            # Gherkin feature file with scenarios
-
-step-definitions/domain-specific/
-└── loan-topup-steps.js           # Step implementations for loan top-up scenarios
-
-dsl/
-└── loan-terms.json               # Domain-specific language definitions for loans
-```
-
-## Key Scenarios
-
-The BDD specifications cover these key scenarios:
-
-1. **Offer Presentation**: How the pre-approved offer is presented to eligible customers
-2. **Amount Selection**: How customers select or customise their top-up amount
-3. **Terms Review**: How loan details and impacts are presented
-4. **Confirmation Process**: How customers confirm their acceptance
-5. **Disbursement**: How and when funds are made available
-6. **Edge Cases**: Handling scenarios like abandonment, declining offers, etc.
-
-Each scenario includes variations for:
-- Different regions (UK, Hong Kong)
-- Different customer segments (Basic, Wealth)
-- Different times of day and seasonal periods
-
-## Testing with These Specifications
-
-To run tests based on these specifications:
+To run tests for the loan top-up journey:
 
 ```bash
 # Run all loan top-up scenarios
 npm test -- --tags @loan-topup
-
-# Run specific scenarios
-npm test -- --tags @loan-topup-amount-selection
-
-# Run against a specific environment
-npm test -- --tags @loan-topup --env staging
 
 # Run for a specific region
 npm test -- --tags @loan-topup --region UK
@@ -88,40 +42,31 @@ npm test -- --tags @loan-topup --segment Wealth
 npm test -- --tags @loan-topup --time-period evening
 ```
 
-## Test Data Requirements
+## Functional DSL Approach
 
-The tests require the following test data to be set up:
+The Loan Top-up journey implements a functional DSL approach inspired by "Structure and Interpretation of Computer Programs" (SICP) principles:
 
-1. Test customers for each segment (Basic and Wealth) in each region (UK and HK)
-2. Pre-approval flags and limits set for these customers
-3. Bank accounts for disbursement testing
-4. Multiple language preferences configured
-5. Mock date/time capabilities for testing time-sensitive scenarios
-6. Mock seasonal promotion configurations
+1. **Metalinguistic Abstraction** - Creating a domain-specific language for loan features
+2. **Expression Evaluation** - Using a proper evaluator for expressions
+3. **Environment Model** - Implementing lexical scoping and closures
+4. **Data Abstraction** - Separating implementation from interface
+5. **Business Rules as Data** - Representing rules as expressions that can be analyzed
 
-## Related Documents
+This approach allows for elegant handling of complex variations in region, customer segment, and time-sensitive content.
 
-- [Loan Top-up Business Requirements](../../../docs/requirements/loan-topup-requirements.md)
-- [Loan Top-up UI/UX Designs](../../../designs/loan-topup-designs.md)
-- [API Specifications](../../../apis/loan-topup-api.md)
-- [Internationalization Guidelines](../../../docs/internationalization/i18n-guidelines.md)
-- [Customer Segmentation Strategy](../../../docs/business/customer-segmentation.md)
-- [Promotional Calendar](../../../docs/marketing/promotional-calendar.md)
+## Related Banking Features
 
-## Contributing
+The lending domain includes other features related to borrowing products:
 
-When adding new scenarios or modifying existing ones:
-
-1. Follow the domain-specific language defined in `loan-terms.json`
-2. Ensure scenarios are atomic and focused on a single aspect of behaviour
-3. Include appropriate tags to categorise scenarios
-4. Update step definitions to support new or modified steps
-5. Verify scenarios pass in the development environment before submitting PR
-6. Ensure all scenarios support the required regions, customer segments, and time-sensitive variations
+- Loan origination (application and approval process)
+- Mortgage applications
+- Overdraft management
+- Credit card applications
+- Loan repayment calculators
 
 ## Regulatory Considerations
 
-The loan top-up journey must comply with:
+All lending features must comply with:
 
 ### United Kingdom
 - Consumer Credit Act regulations
@@ -134,4 +79,12 @@ The loan top-up journey must comply with:
 - Money Lenders Ordinance
 - Code of Banking Practice
 
-All scenarios should be reviewed for compliance with these regulations.
+## Contributing
+
+When adding new lending features or enhancing existing ones:
+
+1. Follow the domain-specific language patterns established in the functional DSL
+2. Ensure scenarios cover all relevant region and customer segment variations
+3. Consider time-sensitive content where applicable
+4. Include appropriate regulatory checks and disclosures
+5. Update this README with new feature information
