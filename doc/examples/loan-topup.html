@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Top-up Example - FinApp DSL</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #24292e;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        .header {
+            border-bottom: 1px solid #eaecef;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #0366d6;
+            font-weight: 600;
+        }
+        .toc {
+            background-color: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+        }
+        .toc h3 {
+            margin-top: 0;
+        }
+        .toc ul {
+            padding-left: 20px;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eaecef;
+        }
+        code {
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+            background-color: rgba(27, 31, 35, 0.05);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+        }
+        pre {
+            background-color: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            overflow: auto;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        .note {
+            background-color: #f1f8ff;
+            border-left: 4px solid #0366d6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+        }
+        .warning {
+            background-color: #fff5b1;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+        }
+        .example-result {
+            background-color: #f0fff4;
+            border-left: 4px solid #68d391;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+        }
+        .diagram {
+            display: block;
+            margin: 30px auto;
+            max-width: 100%;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 20px;
+            background-color: #f6f8fa;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #e1e4e8;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f6f8fa;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f8f8;
+        }
+        footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #eaecef;
+            color: #586069;
+            font-size: 14px;
+        }
+        a.home {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #0366d6;
+            text-decoration: none;
+        }
+        a.home:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <a href="../../index.html" class="home">← Back to Home</a>
+    
+    <div class="header">
+        <h1>Loan Top-up Example</h1>
+        <p>A comprehensive example showing how to implement loan top-up features using the FinApp DSL</p>
+    </div>
+
+    <div class="toc">
+        <h3>Table of Contents</h3>
+        <ul>
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#requirements">Business Requirements</a></li>
+            <li><a href="#data-model">Data Model</a></li>
+            <li><a href="#eligibility">Eligibility Rules</a></li>
+            <li><a href="#amount-limits">Amount Calculation</a></li>
+            <li><a href="#interest-rates">Interest Rate Rules</a></li>
+            <li><a href="#putting-together">Putting It All Together</a></li>
+            <li><a href="#testing">Testing the Implementation</a></li>
+            <li><a href="#extending">Extending the Example</a></li>
+        </ul>
+    </div>
+
+    <div class="section" id="introduction">
+        <h2>Introduction</h2>
+        <p>
+            This example demonstrates how to implement a loan top-up feature for an existing loan product using the FinApp DSL. A loan top-up allows existing customers to borrow additional funds on top of their current loan, often with simplified approval processes since they're already known customers.
+        </p>
+        <p>
+            We'll build a complete implementation that covers:
+        </p>
+        <ul>
+            <li>Determining customer eligibility across different regions</li>
+            <li>Calculating appropriate loan amounts based on customer segment</li>
+            <li>Setting interest rates using region-specific rules</li>
+            <li>Combining rules into a cohesive workflow</li>
+        </ul>
+        <p>
+            This example showcases many key features of the FinApp DSL, including business rules, customer segmentation, region-specific logic, and financial calculations.
+        </p>
+    </div>
+
+    <div class="section" id="requirements">
+        <h2>Business Requirements</h2>
+        <p>
+            Let's define the business requirements for our loan top-up feature:
+        </p>
+        <table>
+            <tr>
+                <th>Requirement ID</th>
+                <th>Description</th>
+                <th>Region Variation</th>
+            </tr>
+            <tr>
+                <td>REQ-001</td>
+                <td>Customer must have had their existing loan for at least 6 months</td>
+                <td>Constant across regions</td>
+            </tr>
+            <tr>
+                <td>REQ-002</td>
+                <td>Customer must have made at least X on-time payments</td>
+                <td>UK: 4 payments<br>EU: 5 payments<br>US: 3 payments</td>
+            </tr>
+            <tr>
+                <td>REQ-003</td>
+                <td>Customer's current balance must be below X% of original loan</td>
+                <td>UK: 70%<br>EU: 65%<br>US: 75%</td>
+            </tr>
+            <tr>
+                <td>REQ-004</td>
+                <td>Maximum top-up amount based on customer segment</td>
+                <td>Basic: Up to 50% of original loan<br>Premium: Up to 75% of original loan<br>Wealth: Up to 100% of original loan</td>
+            </tr>
+            <tr>
+                <td>REQ-005</td>
+                <td>Interest rate adjustment based on customer history</td>
+                <td>For each late payment: +0.5% interest<br>For each year as customer: -0.25% interest</td>
+            </tr>
+        </table>
+        <p>
+            These requirements need to be encoded as business rules in our DSL implementation.
+        </p>
+    </div>
+
+    <div class="section" id="data-model">
+        <h2>Data Model</h2>
+        <p>
+            Before we start implementing, let's define the data structures we'll work with:
+        </p>
+        <pre><code>;; Customer data model
+(def customer-example 
+  {:id "C12345"
+   :name "Jane Smith"
+   :segment "Premium"  ; "Basic", "Premium", or "Wealth"
+   :region "UK"        ; "UK", "EU", or "US"
+   :customer-since "2019-03-15"
+   :credit-score 720})
+
+;; Existing loan data model
+(def loan-example
+  {:id "L98765"
+   :customer-id "C12345"
+   :original-amount 10000
+   :current-balance 5600
+   :start-date "2022-09-10"
+   :monthly-payment 450
+   :interest-rate 5.25
+   :term-months 36
+   :on-time-payments 12
+   :late-payments 1})
+
+;; Top-up request model
+(def topup-request-example
+  {:loan-id "L98765"
+   :requested-amount 4000
+   :purpose "Home renovation"})
+   
+;; Region configuration model
+(def regions
+  {"UK" {:min-payments 4
+         :max-balance-percent 70
+         :base-interest-rate 5.5}
+   "EU" {:min-payments 5
+         :max-balance-percent 65
+         :base-interest-rate 4.9}
+   "US" {:min-payments 3
+         :max-balance-percent 75
+         :base-interest-rate 6.2}})</code></pre>
+        <p>
+            These data structures represent the domain entities we'll be working with in our DSL implementation.
+        </p>
+    </div>
+
+    <div class="section" id="eligibility">
+        <h2>Eligibility Rules</h2>
+        <p>
+            Let's implement the eligibility rules for loan top-ups using FinApp DSL business rules:
+        </p>
+        <pre><code>(require '[finapp-dsl.core :as dsl])
+(require '[finapp-dsl.loan-topup :as topup])
+(require '[clj-time.core :as time])
+(require '[clj-time.format :as time-format])
+
+;; Create the environment
+(def env (dsl/create-global-environment))
+
+;; Rule 1: Customer must have had their existing loan for at least 6 months
+(def loan-tenure-rule
+  (dsl/make-business-rule
+    "R001-TENURE"
+    ;; Condition
+    (dsl/make-lambda ["customer" "loan" "region"] 
+      (dsl/make-application >= 
+        [(dsl/make-application topup/loan-months-active [(dsl/make-variable "loan")])
+         6]))
+    ;; Action
+    (dsl/make-lambda ["customer" "loan" "region"]
+      (dsl/make-quoted true))))
+
+;; Rule 2: Customer must have made at least X on-time payments (region specific)
+(def payment-history-rule
+  (dsl/make-business-rule
+    "R002-PAYMENTS"
+    ;; Condition
+    (dsl/make-lambda ["customer" "loan" "region"] 
+      (dsl/make-application >= 
+        [(dsl/make-application :on-time-payments [(dsl/make-variable "loan")])
+         (dsl/make-application topup/get-region-config 
+           [(dsl/make-variable "region") 
+            (dsl/make-quoted :min-payments)])]))
+    ;; Action
+    (dsl/make-lambda ["customer" "loan" "region"]
+      (dsl/make-quoted true))))
+
+;; Rule 3: Customer's current balance must be below X% of original loan (region specific)
+(def balance-percent-rule
+  (dsl/make-business-rule
+    "R003-BALANCE"
+    ;; Condition
+    (dsl/make-lambda ["customer" "loan" "region"] 
+      (dsl/make-application <= 
+        [(dsl/make-application / 
+           [(dsl/make-application :current-balance [(dsl/make-variable "loan")])
+            (dsl/make-application :original-amount [(dsl/make-variable "loan")])])
+         (dsl/make-application / 
+           [(dsl/make-application topup/get-region-config 
+              [(dsl/make-variable "region") 
+               (dsl/make-quoted :max-balance-percent)])
+            100])]))
+    ;; Action
+    (dsl/make-lambda ["customer" "loan" "region"]
+      (dsl/make-quoted true))))
+
+;; Combine all eligibility rules
+(def eligibility-rules
+  (dsl/make-and-rule
+    [loan-tenure-rule
+     payment-history-rule
+     balance-percent-rule]))
+
+;; Function to check eligibility
+(defn check-eligibility [customer loan region]
+  (dsl/evaluate 
+    (dsl/make-application eligibility-rules [customer loan region])
+    env))</code></pre>
+        <p>
+            This implementation shows how to create individual business rules for each eligibility criterion, and then combine them using an AND rule to enforce that all conditions must be met.
+        </p>
+        <div class="example-result">
+            <strong>Example Usage:</strong>
+            <pre><code>;; Check eligibility for a UK customer
+(check-eligibility customer-example loan-example "UK")
+;; => true (if all conditions are met)</code></pre>
+        </div>
+    </div>
+
+    <div class="section" id="amount-limits">
+        <h2>Amount Calculation</h2>
+        <p>
+            Next, let's implement the rules for calculating the maximum top-up amount based on customer segment:
+        </p>
+        <pre><code>;; Maximum amount percentages by segment
+(def segment-amount-percents
+  {"Basic" 50
+   "Premium" 75
+   "Wealth" 100})
+
+;; Rule to calculate maximum allowed top-up amount
+(def max-amount-rule
+  (dsl/make-business-rule
+    "R004-MAX-AMOUNT"
+    ;; Condition (always true, we just want to calculate)
+    (dsl/make-lambda ["customer" "loan" "topup-request"] 
+      (dsl/make-quoted true))
+    ;; Action (calculate the amount)
+    (dsl/make-lambda ["customer" "loan" "topup-request"]
+      (dsl/make-application * 
+        [(dsl/make-application :original-amount [(dsl/make-variable "loan")])
+         (dsl/make-application / 
+           [(dsl/make-application get 
+              [(dsl/make-quoted segment-amount-percents)
+               (dsl/make-application :segment [(dsl/make-variable "customer")])])
+            100])]))))
+
+;; Rule to adjust requested amount if it exceeds maximum
+(def adjust-amount-rule
+  (dsl/make-business-rule
+    "R005-ADJUST-AMOUNT"
+    ;; Condition: requested amount exceeds maximum
+    (dsl/make-lambda ["customer" "loan" "topup-request" "max-amount"] 
+      (dsl/make-application > 
+        [(dsl/make-application :requested-amount [(dsl/make-variable "topup-request")])
+         (dsl/make-variable "max-amount")]))
+    ;; Action: adjust to maximum
+    (dsl/make-lambda ["customer" "loan" "topup-request" "max-amount"]
+      (dsl/make-variable "max-amount"))))
+
+;; Function to calculate approved top-up amount
+(defn calculate-approved-amount [customer loan topup-request]
+  (let [max-amount (dsl/evaluate 
+                     (dsl/make-application max-amount-rule [customer loan topup-request])
+                     env)
+        env-with-max (dsl/define-variable! 
+                       (dsl/make-variable "max-amount") 
+                       max-amount 
+                       env)
+        requested-amount (:requested-amount topup-request)
+        adjusted-amount (dsl/evaluate 
+                          (dsl/make-application 
+                            adjust-amount-rule 
+                            [customer loan topup-request max-amount])
+                          env-with-max)]
+    ;; Return original request if no adjustment needed
+    (if adjusted-amount 
+      adjusted-amount 
+      requested-amount)))</code></pre>
+        <p>
+            This implementation calculates the maximum allowed amount based on the customer's segment, and then adjusts the requested amount if it exceeds this maximum.
+        </p>
+        <div class="example-result">
+            <strong>Example Usage:</strong>
+            <pre><code>;; Calculate amount for a Premium customer requesting 8000
+(calculate-approved-amount 
+  customer-example 
+  loan-example 
+  {:loan-id "L98765" :requested-amount 8000 :purpose "Home renovation"})
+;; => 7500 (adjusted to 75% of 10000 for Premium segment)</code></pre>
+        </div>
+    </div>
+
+    <div class="section" id="interest-rates">
+        <h2>Interest Rate Rules</h2>
+        <p>
+            Now, let's implement the interest rate calculation with adjustments based on customer history:
+        </p>
+        <pre><code>;; Helper function to calculate years as customer
+(defn years-as-customer [customer]
+  (let [format (time-format/formatter "yyyy-MM-dd")
+        start-date (time-format/parse format (:customer-since customer))
+        now (time/now)
+        years (time/in-years (time/interval start-date now))]
+    years))
+
+;; Rule to get base interest rate for region
+(def base-rate-rule
+  (dsl/make-business-rule
+    "R006-BASE-RATE"
+    ;; Condition (always true)
+    (dsl/make-lambda ["customer" "loan" "region"] 
+      (dsl/make-quoted true))
+    ;; Action
+    (dsl/make-lambda ["customer" "loan" "region"]
+      (dsl/make-application topup/get-region-config 
+        [(dsl/make-variable "region") 
+         (dsl/make-quoted :base-interest-rate)]))))
+
+;; Rule to adjust for late payments (+0.5% per late payment)
+(def late-payment-adjustment-rule
+  (dsl/make-business-rule
+    "R007-LATE-PAYMENT-ADJ"
+    ;; Condition: has late payments
+    (dsl/make-lambda ["customer" "loan" "base-rate"] 
+      (dsl/make-application > 
+        [(dsl/make-application :late-payments [(dsl/make-variable "loan")])
+         0]))
+    ;; Action: adjust rate
+    (dsl/make-lambda ["customer" "loan" "base-rate"]
+      (dsl/make-application + 
+        [(dsl/make-variable "base-rate")
+         (dsl/make-application * 
+           [0.5 (dsl/make-application :late-payments [(dsl/make-variable "loan")])])]))))
+
+;; Rule to adjust for customer loyalty (-0.25% per year)
+(def loyalty-adjustment-rule
+  (dsl/make-business-rule
+    "R008-LOYALTY-ADJ"
+    ;; Condition: customer for at least a year
+    (dsl/make-lambda ["customer" "loan" "rate-after-late-adj"] 
+      (dsl/make-application >= 
+        [(dsl/make-application topup/years-as-customer [(dsl/make-variable "customer")])
+         1]))
+    ;; Action: adjust rate
+    (dsl/make-lambda ["customer" "loan" "rate-after-late-adj"]
+      (dsl/make-application max 
+        [3.0  ;; Minimum rate floor
+         (dsl/make-application - 
+           [(dsl/make-variable "rate-after-late-adj")
+            (dsl/make-application * 
+              [0.25 
+               (dsl/make-application topup/years-as-customer 
+                 [(dsl/make-variable "customer")])])])]))))
+
+;; Function to calculate final interest rate
+(defn calculate-interest-rate [customer loan region]
+  (let [base-rate (dsl/evaluate 
+                    (dsl/make-application base-rate-rule [customer loan region])
+                    env)
+        env-with-base (dsl/define-variable! 
+                        (dsl/make-variable "base-rate") 
+                        base-rate 
+                        env)
+        rate-after-late (if (> (:late-payments loan) 0)
+                          (dsl/evaluate 
+                            (dsl/make-application 
+                              late-payment-adjustment-rule 
+                              [customer loan base-rate])
+                            env-with-base)
+                          base-rate)
+        env-with-late (dsl/define-variable! 
+                        (dsl/make-variable "rate-after-late-adj") 
+                        rate-after-late 
+                        env)
+        years-as-customer (years-as-customer customer)
+        final-rate (if (>= years-as-customer 1)
+                     (dsl/evaluate 
+                       (dsl/make-application 
+                         loyalty-adjustment-rule 
+                         [customer loan rate-after-late])
+                       env-with-late)
+                     rate-after-late)]
+    (double (Math/round (* final-rate 100)) / 100)))</code></pre>
+        <p>
+            This implementation calculates interest rates with adjustments for payment history and customer loyalty, demonstrating how to chain rule evaluations together.
+        </p>
+        <div class="example-result">
+            <strong>Example Usage:</strong>
+            <pre><code>;; Calculate interest rate for a UK Premium customer
+(calculate-interest-rate customer-example loan-example "UK")
+;; => 5.75 (base rate 5.5 + 0.5 for late payment - 0.25 for loyalty)</code></pre>
+        </div>
+    </div>
+
+    <div class="section" id="putting-together">
+        <h2>Putting It All Together</h2>
+        <p>
+            Now that we've implemented all the individual components, let's combine them into a complete loan top-up process:
+        </p>
+        <pre><code>;; Complete top-up process function
+(defn process-loan-topup [customer loan topup-request region]
+  (let [eligible? (check-eligibility customer loan region)]
+    (if eligible?
+      (let [approved-amount (calculate-approved-amount customer loan topup-request)
+            interest-rate (calculate-interest-rate customer loan region)
+            ;; Create the top-up loan response
+            topup-loan {:status "APPROVED"
+                       :customer-id (:id customer)
+                       :original-loan-id (:id loan)
+                       :topup-amount approved-amount
+                       :requested-amount (:requested-amount topup-request)
+                       :interest-rate interest-rate
+                       :purpose (:purpose topup-request)
+                       :approval-date (str (time/now))
+                       :region region}]
+        topup-loan)
+      ;; Not eligible
+      {:status "DECLINED"
+       :customer-id (:id customer)
+       :original-loan-id (:id loan)
+       :requested-amount (:requested-amount topup-request)
+       :reason "Customer does not meet eligibility criteria"})))</code></pre>
+        <p>
+            This function brings all our rules together to process a complete loan top-up request, from checking eligibility to calculating approved amounts and interest rates.
+        </p>
+        <div class="example-result">
+            <strong>Example Usage:</strong>
+            <pre><code>;; Process a complete top-up request
+(process-loan-topup 
+  customer-example 
+  loan-example 
+  {:loan-id "L98765" :requested-amount 5000 :purpose "Home renovation"}
+  "UK")
+;; => {:status "APPROVED"
+;;     :customer-id "C12345"
+;;     :original-loan-id "L98765"
+;;     :topup-amount 5000
+;;     :requested-amount 5000
+;;     :interest-rate 5.75
+;;     :purpose "Home renovation"
+;;     :approval-date "2023-06-15T14:30:22.123Z"
+;;     :region "UK"}</code></pre>
+        </div>
+    </div>
+
+    <div class="section" id="testing">
+        <h2>Testing the Implementation</h2>
+        <p>
+            It's crucial to test our implementation thoroughly, especially with different customer segments and regions:
+        </p>
+        <pre><code>;; Test function for different scenarios
+(defn test-scenarios []
+  (let [;; Define test customers
+        basic-customer {:id "C54321" :name "Bob Johnson" :segment "Basic" 
+                        :region "EU" :customer-since "2022-01-10" :credit-score 680}
+        premium-customer {:id "C12345" :name "Jane Smith" :segment "Premium" 
+                          :region "UK" :customer-since "2019-03-15" :credit-score 720}
+        wealth-customer {:id "C98765" :name "Alex Tanner" :segment "Wealth" 
+                         :region "US" :customer-since "2018-07-22" :credit-score 790}
+        
+        ;; Define test loans
+        good-loan {:id "L12345" :customer-id "C12345" :original-amount 10000 
+                  :current-balance 5600 :start-date "2022-09-10" 
+                  :monthly-payment 450 :interest-rate 5.25 :term-months 36 
+                  :on-time-payments 12 :late-payments 1}
+        new-loan {:id "L54321" :customer-id "C54321" :original-amount 8000 
+                 :current-balance 7200 :start-date "2023-01-15" 
+                 :monthly-payment 350 :interest-rate 4.9 :term-months 30 
+                 :on-time-payments 3 :late-payments 0}
+        perfect-loan {:id "L98765" :customer-id "C98765" :original-amount 20000 
+                     :current-balance 10000 :start-date "2022-03-20" 
+                     :monthly-payment 800 :interest-rate 4.5 :term-months 36 
+                     :on-time-payments 15 :late-payments 0}
+        
+        ;; Define test requests
+        small-request {:loan-id "L12345" :requested-amount 3000 :purpose "Vacation"}
+        medium-request {:loan-id "L54321" :requested-amount 5000 :purpose "Car repair"}
+        large-request {:loan-id "L98765" :requested-amount 18000 :purpose "Business expansion"}]
+        
+    ;; Run tests
+    (println "TEST 1: Premium UK customer with good payment history (1 late payment)")
+    (println (process-loan-topup premium-customer good-loan small-request "UK"))
+    
+    (println "\nTEST 2: Basic EU customer with new loan (should be ineligible - not enough payments)")
+    (println (process-loan-topup basic-customer new-loan medium-request "EU"))
+    
+    (println "\nTEST 3: Wealth US customer with perfect payment history but high request")
+    (println (process-loan-topup wealth-customer perfect-loan large-request "US"))))</code></pre>
+        <p>
+            Thorough testing ensures that our rules work correctly for different customer segments and regions, and that edge cases are handled properly.
+        </p>
+    </div>
+
+    <div class="section" id="extending">
+        <h2>Extending the Example</h2>
+        <p>
+            This example can be extended in various ways to accommodate more complex business requirements:
+        </p>
+        <ul>
+            <li>
+                <strong>Additional Eligibility Criteria</strong>: You could add credit score requirements, debt-to-income ratio checks, or employment verification.
+            </li>
+            <li>
+                <strong>Approval Levels</strong>: Implement different approval levels based on amount thresholds, with higher amounts requiring additional review.
+            </li>
+            <li>
+                <strong>Risk-Based Pricing</strong>: Adjust interest rates based on more complex risk scoring that includes credit history, employment stability, and other factors.
+            </li>
+            <li>
+                <strong>Special Promotions</strong>: Add rules for seasonal promotions or targeted offers for specific customer segments.
+            </li>
+            <li>
+                <strong>Documentation Requirements</strong>: Define different documentation requirements based on customer risk profile and requested amount.
+            </li>
+        </ul>
+        <p>
+            The FinApp DSL makes it easy to add these extensions by defining new business rules and integrating them into the existing workflow.
+        </p>
+        <div class="note">
+            <p>
+                <strong>Note:</strong> This example showcases how financial business logic can be represented in a clear, maintainable way using the FinApp DSL. The DSL's functional approach makes it easier to test, validate, and modify rules compared to embedding this logic directly in application code.
+            </p>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Copyright © 2025 AppAthanor. All rights reserved.</p>
+        <p>Documentation written by the FinApp DSL team.</p>
+    </footer>
+</body>
+</html> 

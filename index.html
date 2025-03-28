@@ -1,1 +1,434 @@
-<!DOCTYPE html><html><head><title>FinApp DSL</title></head><body><h1>FinApp DSL Documentation</h1><p>Test page</p></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinApp DSL Documentation</title>
+    <style>
+        :root {
+            --primary-color: #0366d6;
+            --secondary-color: #f6f8fa;
+            --accent-color: #28a745;
+            --text-color: #24292e;
+            --border-color: #e1e4e8;
+            --muted-color: #6a737d;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-right: 15px;
+        }
+        
+        .version {
+            background-color: var(--secondary-color);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+            padding: 0;
+        }
+        
+        nav li {
+            margin-left: 20px;
+        }
+        
+        nav a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        nav a:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+        
+        .hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 60px;
+        }
+        
+        .hero-content {
+            flex: 1;
+            padding-right: 40px;
+        }
+        
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            line-height: 1.2;
+            color: var(--primary-color);
+        }
+        
+        .hero p {
+            font-size: 20px;
+            color: var(--muted-color);
+            margin-bottom: 30px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        
+        .cta-button:hover {
+            background-color: #218838;
+        }
+        
+        .hero-image {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .hero-image img {
+            max-width: 100%;
+            max-height: 300px;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+        
+        .feature-card {
+            background-color: var(--secondary-color);
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: var(--accent-color);
+        }
+        
+        .feature-card h3 {
+            margin-top: 0;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        
+        .quicklinks {
+            margin-bottom: 60px;
+        }
+        
+        .quicklinks h2 {
+            margin-bottom: 30px;
+            font-size: 32px;
+            color: var(--primary-color);
+        }
+        
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .link-card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .link-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .link-card h3 {
+            margin-top: 0;
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        .link-card p {
+            margin-bottom: 15px;
+            color: var(--muted-color);
+        }
+        
+        .link-card a {
+            display: inline-block;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .link-card a:hover {
+            text-decoration: underline;
+        }
+        
+        .code-example {
+            background-color: #282a36;
+            color: #f8f8f2;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 60px;
+            overflow-x: auto;
+        }
+        
+        .code-example pre {
+            margin: 0;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            line-height: 1.5;
+        }
+        
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted-color);
+        }
+        
+        .footer-links {
+            display: flex;
+        }
+        
+        .footer-links a {
+            margin-left: 20px;
+            color: var(--muted-color);
+            text-decoration: none;
+        }
+        
+        .footer-links a:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .hero {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .hero-content {
+                padding-right: 0;
+                margin-bottom: 40px;
+            }
+            
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            nav {
+                margin-top: 20px;
+            }
+            
+            nav ul {
+                flex-direction: column;
+            }
+            
+            nav li {
+                margin-left: 0;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <div class="logo">FinApp DSL</div>
+            <span class="version">v0.1.0</span>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#features">Features</a></li>
+                <li><a href="doc/guides/getting-started.html">Getting Started</a></li>
+                <li><a href="doc/api/index.html">API Reference</a></li>
+                <li><a href="doc/examples/loan-topup.html">Examples</a></li>
+                <li><a href="https://github.com/AppAthanor/finapp-dsl-architecture">GitHub</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Financial Domain-Specific Language</h1>
+                <p>A powerful, flexible DSL for expressing financial business rules and calculations in a declarative, maintainable way.</p>
+                <a href="doc/guides/getting-started.html" class="cta-button">Get Started →</a>
+            </div>
+            <div class="hero-image">
+                <svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="50" y="50" width="300" height="200" rx="10" fill="#f6f8fa" stroke="#e1e4e8" stroke-width="2"/>
+                    <text x="200" y="150" font-family="monospace" font-size="14" fill="#0366d6" text-anchor="middle">
+                        (dsl/make-business-rule
+                            "R001"
+                            (dsl/make-lambda ["customer" "region"]
+                                (dsl/make-application >= 
+                                    [(dsl/make-application :balance [customer]) 
+                                     1000]))
+                            (dsl/make-lambda ["customer" "region"]
+                                (dsl/make-quoted "Eligible")))
+                    </text>
+                </svg>
+            </div>
+        </section>
+        
+        <section id="features" class="features">
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Financial Calculations</h3>
+                <p>Express complex financial formulas with precision and clarity, ensuring accuracy across your applications.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌍</div>
+                <h3>Multi-Region Support</h3>
+                <p>Easily implement region-specific rules and calculations to support global financial products.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3>Customer Segmentation</h3>
+                <p>Target different customer segments with tailored rules and offerings based on their profiles.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📜</div>
+                <h3>Business Rules Engine</h3>
+                <p>Create, combine, and evaluate business rules to implement complex decision-making logic.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🧩</div>
+                <h3>Composable Design</h3>
+                <p>Build complex systems from simple, reusable components that can be tested independently.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3>Transparent Evaluation</h3>
+                <p>Trace and debug rule evaluations to understand exactly how decisions are made.</p>
+            </div>
+        </section>
+        
+        <section class="quicklinks">
+            <h2>Documentation</h2>
+            <div class="link-grid">
+                <div class="link-card">
+                    <h3>Getting Started</h3>
+                    <p>Learn the basics of the FinApp DSL and set up your first project.</p>
+                    <a href="doc/guides/getting-started.html">Read guide →</a>
+                </div>
+                <div class="link-card">
+                    <h3>Core Concepts</h3>
+                    <p>Understand the foundational concepts that power the FinApp DSL.</p>
+                    <a href="doc/concepts/index.html">Explore concepts →</a>
+                </div>
+                <div class="link-card">
+                    <h3>API Reference</h3>
+                    <p>Comprehensive documentation of all functions and features.</p>
+                    <a href="doc/api/index.html">View API →</a>
+                </div>
+                <div class="link-card">
+                    <h3>Loan Top-up Example</h3>
+                    <p>See a complete implementation of a loan top-up feature.</p>
+                    <a href="doc/examples/loan-topup.html">View example →</a>
+                </div>
+                <div class="link-card">
+                    <h3>Region Support</h3>
+                    <p>Learn how to implement region-specific logic in your financial applications.</p>
+                    <a href="doc/concepts/regions.html">Read about regions →</a>
+                </div>
+                <div class="link-card">
+                    <h3>Customer Segmentation</h3>
+                    <p>Create personalized experiences for different customer segments.</p>
+                    <a href="doc/concepts/segments.html">Explore segmentation →</a>
+                </div>
+            </div>
+        </section>
+        
+        <section class="code-example">
+            <pre>
+;; Define a business rule for loan eligibility
+(def eligibility-rule 
+  (dsl/make-business-rule
+    "LOAN-ELIGIBILITY-001"
+    ;; Condition function
+    (dsl/make-lambda ["customer" "region"] 
+      (dsl/make-application and [
+        ;; Check minimum balance
+        (dsl/make-application >= 
+          [(dsl/make-application :balance [(dsl/make-variable "customer")]) 
+           (dsl/make-application get-min-balance [(dsl/make-variable "region")])])
+        ;; Check credit score
+        (dsl/make-application >= 
+          [(dsl/make-application :credit-score [(dsl/make-variable "customer")]) 
+           (dsl/make-application get-min-credit-score [(dsl/make-variable "region")])])
+      ]))
+    ;; Action function
+    (dsl/make-lambda ["customer" "region"]
+      (dsl/make-quoted {:status "ELIGIBLE" 
+                       :max-amount (dsl/make-application calculate-max-amount 
+                                     [(dsl/make-variable "customer") 
+                                      (dsl/make-variable "region")])}))))
+
+;; Apply the rule to a customer
+(dsl/evaluate 
+  (dsl/make-application eligibility-rule 
+    [{:id "C123" :balance 5000 :credit-score 720 :segment "Premium"} 
+     {:region "UK" :min-balance 1000 :min-credit-score 650}])
+  env)
+;; => {:status "ELIGIBLE", :max-amount 25000}</pre>
+        </section>
+    </main>
+    
+    <footer>
+        <div>&copy; 2025 AppAthanor. All rights reserved.</div>
+        <div class="footer-links">
+            <a href="https://github.com/AppAthanor/finapp-dsl-architecture">GitHub</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+        </div>
+    </footer>
+</body>
+</html>

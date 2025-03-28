@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinApp DSL Core Concepts</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #24292e;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        .header {
+            border-bottom: 1px solid #eaecef;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #0366d6;
+            font-weight: 600;
+        }
+        .toc {
+            background-color: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+        }
+        .toc h3 {
+            margin-top: 0;
+        }
+        .toc ul {
+            padding-left: 20px;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eaecef;
+        }
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .card {
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .card h3 {
+            margin-top: 0;
+            color: #0366d6;
+        }
+        .card p {
+            margin-bottom: 0;
+        }
+        .card a {
+            display: inline-block;
+            margin-top: 15px;
+            color: #0366d6;
+            text-decoration: none;
+        }
+        .card a:hover {
+            text-decoration: underline;
+        }
+        code {
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+            background-color: rgba(27, 31, 35, 0.05);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+        }
+        .diagram {
+            display: block;
+            margin: 30px auto;
+            max-width: 100%;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 20px;
+            background-color: #f6f8fa;
+        }
+        footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #eaecef;
+            color: #586069;
+            font-size: 14px;
+        }
+        a.home {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #0366d6;
+            text-decoration: none;
+        }
+        a.home:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <a href="../../index.html" class="home">← Back to Home</a>
+    
+    <div class="header">
+        <h1>FinApp DSL Core Concepts</h1>
+        <p>Understanding the foundational concepts that power the FinApp DSL</p>
+    </div>
+
+    <div class="toc">
+        <h3>Table of Contents</h3>
+        <ul>
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#expressions">Expressions</a></li>
+            <li><a href="#environment">Environment</a></li>
+            <li><a href="#evaluation">Evaluation</a></li>
+            <li><a href="#business-rules">Business Rules</a></li>
+            <li><a href="#functional-approach">Functional Approach</a></li>
+            <li><a href="#extensibility">Extensibility</a></li>
+            <li><a href="#concept-pages">Detailed Concept Pages</a></li>
+        </ul>
+    </div>
+
+    <div class="section" id="introduction">
+        <h2>Introduction</h2>
+        <p>
+            The FinApp DSL (Domain-Specific Language) is built on a set of core concepts that provide a flexible, powerful foundation for expressing financial logic. These concepts are inspired by functional programming paradigms and are designed to make complex financial rules manageable, testable, and adaptable.
+        </p>
+        <p>
+            This page provides a high-level overview of the key concepts that form the building blocks of the FinApp DSL. Each concept has a dedicated page with more detailed explanations and examples.
+        </p>
+    </div>
+
+    <div class="section" id="expressions">
+        <h2>Expressions</h2>
+        <p>
+            Expressions are the fundamental building blocks of the FinApp DSL. They represent computations, values, or operations that can be evaluated to produce a result. Everything in the DSL is an expression, and expressions can be composed to create complex behavior.
+        </p>
+        <p>
+            The main types of expressions in the FinApp DSL are:
+        </p>
+        <ul>
+            <li><strong>Variable</strong> - A named reference to a value in the environment</li>
+            <li><strong>Quoted</strong> - A literal value (number, string, boolean, etc.)</li>
+            <li><strong>If</strong> - A conditional expression with a predicate and two branches</li>
+            <li><strong>Lambda</strong> - A function definition with parameters and a body</li>
+            <li><strong>Application</strong> - A function call with arguments</li>
+        </ul>
+        <p>
+            Expressions in the FinApp DSL are immutable data structures, which means they can be analyzed, transformed, and manipulated programmatically. This is particularly valuable for generating rules, validating logic, and creating tooling around the DSL.
+        </p>
+    </div>
+
+    <div class="section" id="environment">
+        <h2>Environment</h2>
+        <p>
+            An environment is a context that holds variable bindings for evaluation. It maps variable names to their values, allowing expressions to reference named values during evaluation. Environments can be nested to create lexical scoping, similar to how scope works in many programming languages.
+        </p>
+        <p>
+            The FinApp DSL provides functions to create environments, define variables within them, and look up variable values:
+        </p>
+        <ul>
+            <li><code>create-global-environment</code> - Creates a new top-level environment</li>
+            <li><code>define-variable!</code> - Binds a variable to a value in an environment</li>
+            <li><code>lookup-variable</code> - Retrieves a variable's value from an environment</li>
+            <li><code>extend-environment</code> - Creates a new environment with additional bindings</li>
+        </ul>
+        <p>
+            Environments are crucial for maintaining state and context during the evaluation of expressions, especially when working with functions that have parameters or rules that operate on specific inputs.
+        </p>
+    </div>
+
+    <div class="section" id="evaluation">
+        <h2>Evaluation</h2>
+        <p>
+            Evaluation is the process of interpreting an expression to produce a value. The FinApp DSL evaluator is a function that takes an expression and an environment and returns the result of evaluating the expression in that environment.
+        </p>
+        <p>
+            The evaluation process follows these general rules:
+        </p>
+        <ul>
+            <li>Variables are looked up in the environment</li>
+            <li>Quoted expressions evaluate to their literal value</li>
+            <li>If expressions evaluate their predicate and then one of their branches</li>
+            <li>Lambda expressions create function objects</li>
+            <li>Application expressions evaluate a function and its arguments, then apply the function to the arguments</li>
+        </ul>
+        <p>
+            The evaluator is the core engine of the DSL, implementing the semantics that give meaning to expressions. It's a recursive process that systematically walks through the structure of expressions to compute their values.
+        </p>
+    </div>
+
+    <div class="section" id="business-rules">
+        <h2>Business Rules</h2>
+        <p>
+            Business rules are a higher-level abstraction in the FinApp DSL that encode domain-specific financial logic. A business rule consists of a condition and an action, each represented as a function (lambda expression) with the same parameter signature.
+        </p>
+        <p>
+            When a business rule is evaluated:
+        </p>
+        <ol>
+            <li>The condition function is called with the provided arguments</li>
+            <li>If the condition evaluates to true, the action function is called with the same arguments</li>
+            <li>If the condition evaluates to false, the rule does not apply and returns false</li>
+        </ol>
+        <p>
+            Business rules can be combined in various ways to create complex rule sets. They can be chained together, grouped into collections, prioritized, and even nest other rules within their conditions or actions. This flexibility allows for sophisticated financial logic that can adapt to different regions, customer segments, and business requirements.
+        </p>
+        <p>
+            Rules are identified by unique IDs, making them traceable when debugging or auditing financial decisions.
+        </p>
+    </div>
+
+    <div class="section" id="functional-approach">
+        <h2>Functional Approach</h2>
+        <p>
+            The FinApp DSL takes a functional programming approach, which brings several benefits to financial application development:
+        </p>
+        <ul>
+            <li><strong>Immutability</strong> - Expressions and values don't change once created, making logic easier to reason about</li>
+            <li><strong>Referential transparency</strong> - Expressions always evaluate to the same result given the same inputs, making testing and debugging simpler</li>
+            <li><strong>Composability</strong> - Small, focused expressions can be combined to create complex behavior in a modular way</li>
+            <li><strong>Higher-order functions</strong> - Functions can take other functions as arguments and return functions as results, enabling flexible abstractions</li>
+        </ul>
+        <p>
+            These functional programming principles make the FinApp DSL particularly well-suited for expressing financial business rules, which often involve complex calculations, conditional logic, and need to be both auditable and adaptable.
+        </p>
+    </div>
+
+    <div class="section" id="extensibility">
+        <h2>Extensibility</h2>
+        <p>
+            The FinApp DSL is designed to be extensible, allowing developers to add new capabilities and adapt it to specific financial domains:
+        </p>
+        <ul>
+            <li><strong>Custom primitives</strong> - New primitive operations can be added to the DSL</li>
+            <li><strong>Domain-specific abstractions</strong> - Higher-level constructs can be built on top of the core expressions</li>
+            <li><strong>Integration points</strong> - The DSL can interface with external systems, databases, and APIs</li>
+            <li><strong>Tooling support</strong> - The expression-based structure facilitates the development of tools for analysis, visualization, and testing</li>
+        </ul>
+        <p>
+            This extensibility ensures that the FinApp DSL can evolve alongside changing business requirements and financial regulations.
+        </p>
+    </div>
+
+    <div class="section" id="concept-pages">
+        <h2>Detailed Concept Pages</h2>
+        <div class="card-container">
+            <div class="card">
+                <h3>Regions</h3>
+                <p>Learn how the FinApp DSL handles region-specific financial rules and regulations across different markets.</p>
+                <a href="regions.html">Read more →</a>
+            </div>
+            <div class="card">
+                <h3>Customer Segmentation</h3>
+                <p>Understand how to implement customer segmentation logic to tailor financial products for different customer groups.</p>
+                <a href="segments.html">Read more →</a>
+            </div>
+            <div class="card">
+                <h3>Business Rules Engine</h3>
+                <p>Explore the business rules engine that powers decision-making in the FinApp DSL.</p>
+                <a href="rules-engine.html">Read more →</a>
+            </div>
+            <div class="card">
+                <h3>Financial Calculations</h3>
+                <p>Discover how the DSL supports complex financial calculations with precision and auditability.</p>
+                <a href="calculations.html">Read more →</a>
+            </div>
+            <div class="card">
+                <h3>Expression Evaluation</h3>
+                <p>Deep dive into the evaluation process and how expressions are interpreted in the FinApp DSL.</p>
+                <a href="evaluation.html">Read more →</a>
+            </div>
+            <div class="card">
+                <h3>Testing and Validation</h3>
+                <p>Learn best practices for testing DSL code and validating financial logic.</p>
+                <a href="testing.html">Read more →</a>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Copyright © 2025 AppAthanor. All rights reserved.</p>
+        <p>Documentation written by the FinApp DSL team.</p>
+    </footer>
+</body>
+</html> 

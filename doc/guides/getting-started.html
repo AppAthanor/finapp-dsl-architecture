@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started with FinApp DSL</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #24292e;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        .header {
+            border-bottom: 1px solid #eaecef;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #0366d6;
+            font-weight: 600;
+        }
+        .toc {
+            background-color: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+        }
+        .toc h3 {
+            margin-top: 0;
+        }
+        .toc ul {
+            padding-left: 20px;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eaecef;
+        }
+        code {
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+            background-color: rgba(27, 31, 35, 0.05);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+        }
+        pre {
+            background-color: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            overflow: auto;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        .note {
+            background-color: #f1f8ff;
+            border-left: 4px solid #0366d6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+        }
+        .warning {
+            background-color: #fff5b1;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+        }
+        footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #eaecef;
+            color: #586069;
+            font-size: 14px;
+        }
+        a.home {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #0366d6;
+            text-decoration: none;
+        }
+        a.home:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <a href="../../index.html" class="home">← Back to Home</a>
+    
+    <div class="header">
+        <h1>Getting Started with FinApp DSL</h1>
+        <p>Learn how to install, set up, and use the FinApp DSL in your Clojure projects.</p>
+    </div>
+
+    <div class="toc">
+        <h3>Table of Contents</h3>
+        <ul>
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#installation">Installation</a></li>
+            <li><a href="#basic-concepts">Basic Concepts</a></li>
+            <li><a href="#creating-expressions">Creating Expressions</a></li>
+            <li><a href="#evaluation">Evaluation</a></li>
+            <li><a href="#business-rules">Working with Business Rules</a></li>
+            <li><a href="#example">Complete Example</a></li>
+            <li><a href="#next-steps">Next Steps</a></li>
+        </ul>
+    </div>
+
+    <div class="section" id="introduction">
+        <h2>Introduction</h2>
+        <p>
+            FinApp DSL is a domain-specific language for financial applications built in Clojure. It provides a way to express financial business rules, calculations, and customer journeys in a declarative, functional way. The DSL is designed to make complex financial logic more maintainable, testable, and adaptable across different regions and customer segments.
+        </p>
+        <p>
+            This guide will walk you through the basic concepts of the FinApp DSL, how to set it up in your project, and how to write your first expressions and business rules.
+        </p>
+    </div>
+
+    <div class="section" id="installation">
+        <h2>Installation</h2>
+        <p>
+            To use FinApp DSL in your Clojure project, add the following dependency to your <code>project.clj</code> file:
+        </p>
+        <pre><code>[finapp-dsl "0.1.0-SNAPSHOT"]</code></pre>
+        <p>
+            Or if you're using <code>deps.edn</code>, add:
+        </p>
+        <pre><code>{:deps {finapp-dsl/finapp-dsl {:mvn/version "0.1.0-SNAPSHOT"}}}</code></pre>
+        <p>
+            You can also install from source:
+        </p>
+        <pre><code>git clone https://github.com/AppAthanor/finapp-dsl-architecture.git
+cd finapp-dsl-architecture/specifications/dsl/functional-clj/finapp-dsl
+lein install</code></pre>
+    </div>
+
+    <div class="section" id="basic-concepts">
+        <h2>Basic Concepts</h2>
+        <p>
+            The FinApp DSL is built on a few core concepts:
+        </p>
+        <ul>
+            <li><strong>Expressions</strong> - Building blocks of the DSL that represent computations or values</li>
+            <li><strong>Environments</strong> - Storage for variable bindings that provide context for evaluations</li>
+            <li><strong>Evaluator</strong> - The engine that interprets and executes expressions within environments</li>
+            <li><strong>Business Rules</strong> - Compositions of expressions that encode domain-specific logic</li>
+        </ul>
+        <p>
+            In the FinApp DSL, everything is represented as data structures. This makes it easy to analyze, transform, and generate rules and expressions programmatically.
+        </p>
+        <div class="note">
+            <p>
+                <strong>Note:</strong> The FinApp DSL uses a functional approach, meaning expressions don't have side effects and always evaluate to the same result given the same inputs.
+            </p>
+        </div>
+    </div>
+
+    <div class="section" id="creating-expressions">
+        <h2>Creating Expressions</h2>
+        <p>
+            To start using the DSL, you'll need to create expressions. Here are the basic expression types:
+        </p>
+        <pre><code>;; Import the DSL
+(require '[finapp-dsl.core :as dsl])
+
+;; 1. Variables
+(def customer-var (dsl/make-variable "customer"))
+
+;; 2. Quoted expressions (literal values)
+(def greeting (dsl/make-quoted "Hello, customer!"))
+
+;; 3. Conditional expressions
+(def check-balance 
+  (dsl/make-if 
+    (dsl/make-application >= [(dsl/make-application :balance [customer-var]) 1000])
+    (dsl/make-quoted "Eligible")
+    (dsl/make-quoted "Not eligible")))
+
+;; 4. Lambda expressions (functions)
+(def eligibility-fn 
+  (dsl/make-lambda ["customer"] 
+    check-balance))
+
+;; 5. Application expressions (function calls)
+(def check-result 
+  (dsl/make-application eligibility-fn 
+    [{:id "C123" :balance 1500}]))</code></pre>
+        <p>
+            These expressions can be combined to create more complex logic.
+        </p>
+    </div>
+
+    <div class="section" id="evaluation">
+        <h2>Evaluation</h2>
+        <p>
+            To evaluate expressions, you need an environment that provides context:
+        </p>
+        <pre><code>;; Create a global environment
+(def env (dsl/create-global-environment))
+
+;; Define variables in the environment
+(def env-with-customer 
+  (dsl/define-variable! 
+    (dsl/make-variable "customer") 
+    {:id "C123" :balance 1500} 
+    env))
+
+;; Evaluate an expression in the environment
+(dsl/evaluate check-balance env-with-customer)
+;; => "Eligible"</code></pre>
+        <p>
+            The evaluator walks through the expression tree, resolving variables, applying functions, and computing results.
+        </p>
+    </div>
+
+    <div class="section" id="business-rules">
+        <h2>Working with Business Rules</h2>
+        <p>
+            Business rules are a higher-level abstraction that combines a condition and an action:
+        </p>
+        <pre><code>;; Create a business rule
+(def eligibility-rule 
+  (dsl/make-business-rule
+    "BR001"  ;; Rule ID
+    ;; Condition expression
+    (dsl/make-lambda ["customer" "region"] 
+      (dsl/make-application >= 
+        [(dsl/make-application :balance [(dsl/make-variable "customer")]) 
+         1000]))
+    ;; Action expression
+    (dsl/make-lambda ["customer" "region"]
+      (dsl/make-quoted "Customer is eligible"))))
+
+;; Apply the rule
+(def customer {:id "C123" :balance 1500 :segment "Basic"})
+(dsl/evaluate 
+  (dsl/make-application eligibility-rule [customer dsl/uk-region])
+  env)
+;; => "Customer is eligible" (if condition is true)</code></pre>
+        <p>
+            Business rules can be combined and reused to build complex domain logic.
+        </p>
+        <div class="note">
+            <p>
+                <strong>Tip:</strong> Business rules are particularly useful for logic that varies by region or customer segment.
+            </p>
+        </div>
+    </div>
+
+    <div class="section" id="example">
+        <h2>Complete Example</h2>
+        <p>
+            Here's a more complete example showing a loan top-up scenario:
+        </p>
+        <pre><code>(require '[finapp-dsl.core :as dsl])
+
+;; Create the environment
+(def env (dsl/create-global-environment))
+
+;; Define the top-up amount limits rule
+(def amount-limits-rule
+  (dsl/make-business-rule
+    "BR002"
+    ;; Condition checks if amount is within limits for the segment
+    (dsl/make-lambda ["customer" "region" "amount"] 
+      (dsl/make-application <= 
+        [(dsl/make-variable "amount") 
+         (dsl/make-if
+           (dsl/make-application = 
+             [(dsl/make-application :segment [(dsl/make-variable "customer")])
+              "Wealth"])
+           10000  ;; Wealth segment limit
+           5000)]))  ;; Basic segment limit
+    ;; Action adjusts or validates the amount
+    (dsl/make-lambda ["customer" "region" "amount"] 
+      (dsl/make-if 
+        (dsl/make-application <= [(dsl/make-variable "amount") 0])
+        (dsl/make-quoted "Amount must be positive")
+        (dsl/make-variable "amount")))))
+
+;; Apply the rule to different customers
+(def wealth-customer {:id "C123" :balance 5000 :segment "Wealth"})
+(def basic-customer {:id "C456" :balance 2000 :segment "Basic"})
+
+;; Check valid amount for wealth customer
+(dsl/evaluate 
+  (dsl/make-application amount-limits-rule [wealth-customer dsl/uk-region 8000])
+  env)
+;; => 8000 (within limits)
+
+;; Check invalid amount for basic customer
+(dsl/evaluate 
+  (dsl/make-application amount-limits-rule [basic-customer dsl/uk-region 7000])
+  env)
+;; => false (above limit)</code></pre>
+    </div>
+
+    <div class="section" id="next-steps">
+        <h2>Next Steps</h2>
+        <p>
+            Now that you have a basic understanding of the FinApp DSL, here are some next steps:
+        </p>
+        <ul>
+            <li>Explore the <a href="../api/index.html">API Reference</a> for comprehensive documentation on all DSL functions</li>
+            <li>Learn about <a href="../concepts/regions.html">Region Support</a> and how to implement region-specific logic</li>
+            <li>Understand <a href="../concepts/segments.html">Customer Segmentation</a> to build tailored financial rules</li>
+            <li>Check out the <a href="../examples/loan-topup.html">Loan Top-up Example</a> for a full end-to-end implementation</li>
+        </ul>
+        <div class="warning">
+            <p>
+                <strong>Important:</strong> Always test your business rules thoroughly across all regions and customer segments to ensure consistent behavior.
+            </p>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Copyright © 2025 AppAthanor. All rights reserved.</p>
+        <p>Documentation written by the FinApp DSL team.</p>
+    </footer>
+</body>
+</html> 

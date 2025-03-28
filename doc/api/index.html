@@ -3,39 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinApp DSL API Documentation</title>
+    <title>FinApp DSL API Reference</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown.min.css">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6;
-            color: #333;
-            max-width: 800px;
+            color: #24292e;
+            max-width: 980px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #fff;
         }
-        h1 {
-            color: #0366d6;
+        .header {
             border-bottom: 1px solid #eaecef;
-            padding-bottom: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
         }
-        h2 {
-            margin-top: 24px;
-            margin-bottom: 16px;
+        .header h1 {
+            margin: 0;
+            color: #0366d6;
             font-weight: 600;
-            color: #24292e;
         }
-        a {
+        .nav {
+            margin-top: 30px;
+            margin-bottom: 40px;
+        }
+        .nav ul {
+            display: flex;
+            gap: 20px;
+            list-style: none;
+            padding: 0;
+        }
+        .nav a {
             color: #0366d6;
             text-decoration: none;
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 3px;
         }
-        a:hover {
-            text-decoration: underline;
+        .nav a:hover {
+            background-color: #f1f8ff;
         }
-        pre {
-            background-color: #f6f8fa;
-            padding: 16px;
-            border-radius: 6px;
-            overflow: auto;
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eaecef;
         }
         code {
             font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
@@ -43,53 +59,328 @@
             padding: 0.2em 0.4em;
             border-radius: 3px;
         }
+        pre {
+            background-color: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            overflow: auto;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        .function-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .function-table th {
+            text-align: left;
+            padding: 8px 16px;
+            background-color: #f6f8fa;
+            border: 1px solid #e1e4e8;
+        }
+        .function-table td {
+            padding: 8px 16px;
+            border: 1px solid #e1e4e8;
+        }
+        .function-table tr:nth-child(even) {
+            background-color: #f6f8fa;
+        }
+        .namespace {
+            margin-bottom: 40px;
+        }
+        .function {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+        }
+        .function h3 {
+            margin-top: 0;
+            color: #0366d6;
+        }
+        .function-signature {
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+            margin-bottom: 15px;
+        }
+        .params, .returns {
+            margin-bottom: 10px;
+        }
+        .param-name {
+            font-weight: bold;
+        }
+        footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #eaecef;
+            color: #586069;
+            font-size: 14px;
+        }
+        a.home {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #0366d6;
+            text-decoration: none;
+        }
+        a.home:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
-    <h1>FinApp DSL API Documentation</h1>
+    <a href="../../index.html" class="home">← Back to Home</a>
     
-    <p>This is the API documentation for the FinApp DSL project.</p>
+    <div class="header">
+        <h1>FinApp DSL API Reference</h1>
+        <p>Complete reference documentation for the FinApp DSL library.</p>
+    </div>
+
+    <div class="nav">
+        <ul>
+            <li><a href="#core">finapp-dsl.core</a></li>
+            <li><a href="#loan-topup">finapp-dsl.loan-topup</a></li>
+        </ul>
+    </div>
+
+    <div class="namespace" id="core">
+        <div class="section">
+            <h2>finapp-dsl.core</h2>
+            <p>Core namespace for Financial Application DSL. Provides functions to create, manipulate, and evaluate financial expressions and rules within a domain-specific language for financial applications.</p>
+        </div>
+
+        <h3>Expression Type Constructors</h3>
+        <table class="function-table">
+            <thead>
+                <tr>
+                    <th>Function</th>
+                    <th>Description</th>
+                    <th>Parameters</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><a href="#make-variable">make-variable</a></td>
+                    <td>Creates a variable expression</td>
+                    <td>name</td>
+                </tr>
+                <tr>
+                    <td><a href="#make-application">make-application</a></td>
+                    <td>Creates a function application expression</td>
+                    <td>operator, operands</td>
+                </tr>
+                <tr>
+                    <td><a href="#make-lambda">make-lambda</a></td>
+                    <td>Creates a lambda expression</td>
+                    <td>parameters, body</td>
+                </tr>
+                <tr>
+                    <td><a href="#make-if">make-if</a></td>
+                    <td>Creates a conditional expression</td>
+                    <td>predicate, consequent, alternative</td>
+                </tr>
+                <tr>
+                    <td><a href="#make-assignment">make-assignment</a></td>
+                    <td>Creates an assignment expression</td>
+                    <td>variable, value</td>
+                </tr>
+                <tr>
+                    <td><a href="#make-sequence">make-sequence</a></td>
+                    <td>Creates a sequence expression</td>
+                    <td>expressions</td>
+                </tr>
+                <tr>
+                    <td><a href="#make-quoted">make-quoted</a></td>
+                    <td>Creates a quoted expression</td>
+                    <td>text</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Environment Management</h3>
+        <table class="function-table">
+            <thead>
+                <tr>
+                    <th>Function</th>
+                    <th>Description</th>
+                    <th>Parameters</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><a href="#create-global-environment">create-global-environment</a></td>
+                    <td>Creates a new global environment</td>
+                    <td>none</td>
+                </tr>
+                <tr>
+                    <td><a href="#extend-environment">extend-environment</a></td>
+                    <td>Extends an environment with new bindings</td>
+                    <td>vars, vals, base-env</td>
+                </tr>
+                <tr>
+                    <td><a href="#lookup-variable-value">lookup-variable-value</a></td>
+                    <td>Looks up a variable's value in an environment</td>
+                    <td>var, env</td>
+                </tr>
+                <tr>
+                    <td><a href="#define-variable">define-variable!</a></td>
+                    <td>Defines a variable in an environment</td>
+                    <td>var, val, env</td>
+                </tr>
+                <tr>
+                    <td><a href="#set-variable-value">set-variable-value!</a></td>
+                    <td>Sets a variable's value in an environment</td>
+                    <td>var, val, env</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Evaluation</h3>
+        <table class="function-table">
+            <thead>
+                <tr>
+                    <th>Function</th>
+                    <th>Description</th>
+                    <th>Parameters</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><a href="#evaluate">evaluate</a></td>
+                    <td>Evaluates an expression in a given environment</td>
+                    <td>exp, env</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Business Domain Constants</h3>
+        <table class="function-table">
+            <thead>
+                <tr>
+                    <th>Constant</th>
+                    <th>Description</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>uk-region</td>
+                    <td>Region definition for the United Kingdom</td>
+                    <td><code>{:code "UK" :name "United Kingdom"}</code></td>
+                </tr>
+                <tr>
+                    <td>hk-region</td>
+                    <td>Region definition for Hong Kong</td>
+                    <td><code>{:code "HK" :name "Hong Kong"}</code></td>
+                </tr>
+                <tr>
+                    <td>basic-segment</td>
+                    <td>Customer segment definition for basic customers</td>
+                    <td><code>{:code "Basic" :name "Basic Customer"}</code></td>
+                </tr>
+                <tr>
+                    <td>wealth-segment</td>
+                    <td>Customer segment definition for wealth management customers</td>
+                    <td><code>{:code "Wealth" :name "Wealth Management Customer"}</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="function" id="make-variable">
+            <h3>make-variable</h3>
+            <div class="function-signature">
+                <code>(make-variable name)</code>
+            </div>
+            <p>Creates a variable expression with the given name.</p>
+            
+            <div class="params">
+                <p><strong>Parameters:</strong></p>
+                <ul>
+                    <li><span class="param-name">name</span> - A string or symbol representing the variable name</li>
+                </ul>
+            </div>
+            
+            <div class="returns">
+                <p><strong>Returns:</strong></p>
+                <p>A map representing a variable expression with <code>:type</code> and <code>:name</code> keys</p>
+            </div>
+            
+            <div class="example">
+                <p><strong>Example:</strong></p>
+                <pre><code>(make-variable "customer") 
+;; => {:type :variable :name "customer"}</code></pre>
+            </div>
+        </div>
+
+        <div class="function" id="evaluate">
+            <h3>evaluate</h3>
+            <div class="function-signature">
+                <code>(evaluate exp env)</code>
+            </div>
+            <p>Evaluates an expression in a given environment.</p>
+            
+            <div class="params">
+                <p><strong>Parameters:</strong></p>
+                <ul>
+                    <li><span class="param-name">exp</span> - The expression to evaluate</li>
+                    <li><span class="param-name">env</span> - The environment for evaluation</li>
+                </ul>
+            </div>
+            
+            <div class="returns">
+                <p><strong>Returns:</strong></p>
+                <p>The result of evaluating the expression</p>
+            </div>
+            
+            <div class="example">
+                <p><strong>Example:</strong></p>
+                <pre><code>(def env (create-global-environment))
+(evaluate (make-variable "x") (define-variable! (make-variable "x") 42 env))
+;; => 42</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="namespace" id="loan-topup">
+        <div class="section">
+            <h2>finapp-dsl.loan-topup</h2>
+            <p>Loan top-up domain implementation using the FinApp DSL. Provides business rules, calculations, and domain-specific functions for loan top-up scenarios.</p>
+        </div>
+
+        <h3>Business Rules</h3>
+        <table class="function-table">
+            <thead>
+                <tr>
+                    <th>Rule</th>
+                    <th>Description</th>
+                    <th>Parameters</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>eligibility-rule</td>
+                    <td>Determines if a customer is eligible for a loan top-up</td>
+                    <td>customer, region</td>
+                </tr>
+                <tr>
+                    <td>amount-limit-rule</td>
+                    <td>Validates and adjusts the top-up amount based on rules</td>
+                    <td>customer, region, amount</td>
+                </tr>
+                <tr>
+                    <td>rate-determination-rule</td>
+                    <td>Determines the interest rate for a loan top-up</td>
+                    <td>customer, region, amount</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>For detailed documentation on each function in the finapp-dsl.loan-topup namespace, refer to the source code docstrings or use the Clojure documentation tools.</p>
+    </div>
     
-    <h2>Namespaces</h2>
-    
-    <ul>
-        <li><a href="#finapp-dsl.core">finapp-dsl.core</a> - Core DSL functionality</li>
-        <li><a href="#finapp-dsl.loan-topup">finapp-dsl.loan-topup</a> - Loan top-up domain implementation</li>
-        <li><a href="#finapp-dsl.doc-generator">finapp-dsl.doc-generator</a> - Documentation generation utilities</li>
-    </ul>
-    
-    <h2 id="finapp-dsl.core">finapp-dsl.core</h2>
-    
-    <p>The core namespace provides the fundamental DSL functionality including expression types, environment handling, and evaluation.</p>
-    
-    <h3>Functions</h3>
-    
-    <ul>
-        <li><code>make-variable [name]</code> - Creates a variable expression</li>
-        <li><code>make-application [operator operands]</code> - Creates a function application expression</li>
-        <li><code>make-lambda [parameters body]</code> - Creates a lambda expression</li>
-        <li><code>make-if [predicate consequent alternative]</code> - Creates a conditional expression</li>
-        <li><code>create-global-environment []</code> - Creates a new global environment</li>
-        <li><code>evaluate [exp env]</code> - Evaluates an expression in the given environment</li>
-    </ul>
-    
-    <h2 id="finapp-dsl.loan-topup">finapp-dsl.loan-topup</h2>
-    
-    <p>Implementation of the loan top-up domain, including business rules and calculations for loan top-up processes.</p>
-    
-    <p><em>Full API documentation will be generated from source code.</em></p>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const now = new Date();
-            const footer = document.createElement('footer');
-            footer.style.marginTop = '40px';
-            footer.style.paddingTop = '20px';
-            footer.style.borderTop = '1px solid #eaecef';
-            footer.style.color = '#6a737d';
-            footer.innerHTML = `<p>Generated at ${now.toLocaleString()}</p>`;
-            document.body.appendChild(footer);
-        });
-    </script>
+    <footer>
+        <p>Copyright © 2025 AppAthanor. All rights reserved.</p>
+        <p>API documentation generated from source code.</p>
+    </footer>
 </body>
 </html> 
