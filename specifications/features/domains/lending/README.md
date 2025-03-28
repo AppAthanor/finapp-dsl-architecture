@@ -30,9 +30,9 @@ Scenario: Customer in Hong Kong sees regional regulatory information
     | HKMA approval notice | Cooling-off period | Risk disclosure |
 ```
 
-### Layer 2: Test Implementation DSL (.js)
+### Layer 2: Test Implementation DSL (.clj)
 
-[loan-topup-functional-dsl.js](../../../dsl/functional/domains/lending/loan-topup-functional-dsl.js) implements a sophisticated functional programming model inspired by SICP (Structure and Interpretation of Computer Programs) principles. This DSL:
+[loan_topup_example.clj](../../../dsl/functional-clj/domains/lending/loan_topup_example.clj) implements a sophisticated functional programming model inspired by SICP (Structure and Interpretation of Computer Programs) principles. This DSL:
 
 - Defines an evaluator for business rules and expressions
 - Implements business rules as expressions
@@ -65,52 +65,49 @@ This specification can be consumed by development teams to implement the feature
 The functional DSL follows a lambda calculus-inspired approach:
 
 1. **Expression Representation**: All business logic is represented as data structures (not just code):
-   ```javascript
-   // Example of a lambda expression in our DSL
-   const calculateNewMonthlyPayment = makeLambda(
-     ['currentBalance', 'topupAmount', 'interestRate', 'remainingTerm'],
-     makeApplication(
-       makeVariable('calculatePayment'),
-       [
-         makeApplication(
-           makeVariable('+'),
-           [makeVariable('currentBalance'), makeVariable('topupAmount')]
-         ),
-         makeVariable('interestRate'),
-         makeVariable('remainingTerm')
-       ]
-     )
-   );
+   ```clojure
+   ;; Example of a lambda expression in our DSL
+   (def calculate-new-monthly-payment 
+     (core/make-lambda
+       ["currentBalance" "topupAmount" "interestRate" "remainingTerm"]
+       (core/make-application
+         (core/make-variable "calculatePayment")
+         [(core/make-application
+            (core/make-variable "+")
+            [(core/make-variable "currentBalance") 
+             (core/make-variable "topupAmount")])
+          (core/make-variable "interestRate")
+          (core/make-variable "remainingTerm")])))
    ```
 
 2. **Evaluator Implementation**: The DSL includes a full evaluator that processes these expressions:
-   ```javascript
-   // Core evaluation function (simplified)
-   const evaluate = (expression, environment) => {
-     if (isSelfEvaluating(expression)) return expression;
-     if (isVariable(expression)) return lookupVariableValue(expression.name, environment);
-     if (isApplication(expression)) {
-       const procedure = evaluate(expression.operator, environment);
-       const args = expression.operands.map(operand => evaluate(operand, environment));
-       return applyProcedure(procedure, args);
-     }
-     // Other expression types handled similarly...
-   };
+   ```clojure
+   ;; Core evaluation function (simplified)
+   (defn evaluate [expression environment]
+     (cond
+       (self-evaluating? expression) expression
+       (variable? expression) (lookup-variable-value (:name expression) environment)
+       (application? expression)
+         (let [procedure (evaluate (:operator expression) environment)
+               args (map #(evaluate % environment) (:operands expression))]
+           (apply-procedure procedure args))
+       ;; Other expression types handled similarly...
+       ))
    ```
 
 3. **Environment Model**: The DSL uses lexical scoping with frames and bindings:
-   ```javascript
-   // Environment operations
-   const extendEnvironment = (variables, values, baseEnv) => {
-     const frame = makeFrame(variables, values);
-     return { frame, parent: baseEnv };
-   };
+   ```clojure
+   ;; Environment operations
+   (defn extend-environment [variables values base-env]
+     {:frame (make-frame variables values)
+      :parent base-env})
    
-   const lookupVariableValue = (variable, env) => {
-     if (!env) throw new Error(`Unbound variable: ${variable}`);
-     if (variable in env.frame) return env.frame[variable];
-     return lookupVariableValue(variable, env.parent);
-   };
+   (defn lookup-variable-value [variable env]
+     (if (nil? env)
+       (throw (Exception. (str "Unbound variable: " variable)))
+       (if (contains? (:frame env) variable)
+         (get-in env [:frame variable])
+         (lookup-variable-value variable (:parent env)))))
    ```
 
 ### Domain-Specific Components
@@ -118,90 +115,80 @@ The functional DSL follows a lambda calculus-inspired approach:
 The DSL defines banking domain concepts as first-class objects:
 
 1. **Regions**:
-   ```javascript
-   const ukRegion = makeRegion('UK', {
-     currency: 'GBP',
-     currencySymbol: '£',
-     dateFormat: 'DD/MM/YYYY',
-     regulatoryBody: 'FCA',
-     coolingOffPeriod: 14,
-     language: 'en-GB',
-     translationsKey: 'uk_translations'
-   });
+   ```clojure
+   (def uk-region
+     (core/make-region "UK"
+       {:currency "GBP"
+        :currencySymbol "£"
+        :dateFormat "DD/MM/YYYY"
+        :regulatoryBody "FCA"
+        :coolingOffPeriod 14
+        :language "en-GB"
+        :translationsKey "uk_translations"}))
    ```
 
 2. **Customer Segments**:
-   ```javascript
-   const wealthSegment = makeCustomerSegment('Wealth', {
-     description: 'Premier or priority banking customers with higher value accounts',
-     interestRates: {
-       UK: 5.4,
-       HK: 5.8
-     },
-     minTopupAmounts: {
-       UK: 5000,
-       HK: 50000
-     },
-     maxTopupAmounts: {
-       UK: 100000,
-       HK: 800000
-     },
-     benefits: {
-       UK: ['Preferential rates', 'Dedicated relationship manager', 'Fee waivers'],
-       HK: ['Priority processing', 'Jade status points', 'Fee waivers']
-     }
-   });
+   ```clojure
+   (def wealth-segment
+     (core/make-customer-segment "Wealth"
+       {:description "Premier or priority banking customers with higher value accounts"
+        :interestRates
+          {"UK" 5.4
+           "HK" 5.8}
+        :minTopupAmounts
+          {"UK" 5000
+           "HK" 50000}
+        :maxTopupAmounts
+          {"UK" 100000
+           "HK" 800000}
+        :benefits
+          {"UK" ["Preferential rates" "Dedicated relationship manager" "Fee waivers"]
+           "HK" ["Priority processing" "Jade status points" "Fee waivers"]}}))
    ```
 
 3. **Business Rules**:
-   ```javascript
-   const topupAmountLimitsRule = makeBusinessRule(
-     'BR001',
-     // Condition expression
-     makeLambda(['customer', 'region', 'amount'], /* ... */),
-     // Action expression
-     makeLambda(['customer', 'region', 'amount'], /* ... */),
-     {
-       description: 'Top-up amount must be between the minimum and maximum pre-approved limits',
-       rationale: 'Ensures the additional borrowing is within affordability parameters',
-       errorMessageKey: 'amount_limit_error'
-     }
-   );
+   ```clojure
+   (def topup-amount-limits-rule
+     (core/make-business-rule
+       "BR001"
+       ;; Condition expression
+       (core/make-lambda
+         ["customer" "region" "amount"]
+         ;; ... condition implementation ...
+       )
+       ;; Action expression
+       (core/make-lambda
+         ["customer" "region" "amount"]
+         ;; ... action implementation ...
+       )
+       {:description "Top-up amount must be between the minimum and maximum pre-approved limits"
+        :rationale "Ensures the additional borrowing is within affordability parameters"
+        :errorMessageKey "amount_limit_error"}))
    ```
 
 4. **Screen Renderers**:
-   ```javascript
-   const renderAmountSelectionScreen = makeLambda(
-     ['customer', 'region', 'currentDateTime'],
-     makeSequence([
-       // Get customer segment
-       makeAssignment(
-         makeVariable('segment'),
-         makeApplication(makeVariable('getCustomerSegment'), [makeVariable('customer')])
-       ),
-       
-       // Get segment-specific limits
-       makeAssignment(
-         makeVariable('minAmount'),
-         makeApplication(
-           makeVariable('getSegmentMinTopupAmount'),
-           [makeVariable('segment'), makeApplication(makeVariable('getRegionCode'), [makeVariable('region')])]
-         )
-       ),
-       
-       // Additional expressions...
-       
-       // Return composed screen data
-       makeQuoted({
-         amountOptions: makeVariable('amountOptions'),
-         minAmount: makeVariable('minAmount'),
-         maxAmount: makeVariable('maxAmount'),
-         timeBasedContent: makeVariable('timeBasedContent'),
-         specialOffers: makeVariable('specialOffers'),
-         localizedText: makeVariable('localizedText')
-       })
-     ])
-   );
+   ```clojure
+   (def render-amount-selection-screen
+     (core/make-lambda
+       ["customer" "region" "currentDateTime"]
+       (core/make-sequence
+         [;; Get customer segment
+          (core/make-assignment
+            (core/make-variable "segment")
+            (core/make-application 
+              (core/make-variable "getCustomerSegment") 
+              [(core/make-variable "customer")]))
+          
+          ;; Additional expressions...
+          
+          ;; Return composed screen data
+          (core/make-quoted
+            {:amountOptions (core/make-variable "amountOptions")
+             :minAmount (core/make-variable "minAmount")
+             :maxAmount (core/make-variable "maxAmount")
+             :timeBasedContent (core/make-variable "timeBasedContent")
+             :specialOffers (core/make-variable "specialOffers")
+             :localizedText (core/make-variable "localizedText")})])))
    ```
 
 ### Integration with Test Framework
@@ -209,40 +196,40 @@ The DSL defines banking domain concepts as first-class objects:
 The DSL connects to test fixtures through a carefully designed interface:
 
 1. **Environment Initialization**:
-   ```javascript
-   // In loan-topup-steps.js
-   Given('I have an existing loan that is eligible for top-up', async function() {
-     // Set up test data
-     this.existingLoan = {
-       id: 'LOAN123456',
-       currentBalance: 10000,
-       originalAmount: 15000,
-       monthlyPayment: 250,
-       remainingTerm: 48,
-       interestRate: 5.9
-     };
-     
-     await loansOverviewPage.setupTestLoan(this.existingLoan);
-     
-     // Add loan to DSL environment
-     FunctionalDSL.defineVariable('currentLoan', this.existingLoan, dslEnvironment);
-   });
+   ```clojure
+   ;; In loan-topup-steps.clj
+   (Given "I have an existing loan that is eligible for top-up" 
+     (fn []
+       ;; Set up test data
+       (def existing-loan
+         {:id "LOAN123456"
+          :currentBalance 10000
+          :originalAmount 15000
+          :monthlyPayment 250
+          :remainingTerm 48
+          :interestRate 5.9})
+       
+       (loans-overview-page/setup-test-loan existing-loan)
+       
+       ;; Add loan to DSL environment
+       (core/define-variable! "currentLoan" existing-loan dsl-environment)))
    ```
 
 2. **Expression Evaluation for Assertions**:
-   ```javascript
-   Then('I should see a localised pre-approved message in the appropriate language', async function() {
-     const visibleMessage = await loansOverviewPage.getTopupOfferMessage();
-     
-     // Evaluate the expected message using the DSL
-     const screenContent = FunctionalDSL.evaluate(
-       FunctionalDSL.loanTopupJourney.initialOfferScreen,
-       dslEnvironment
-     );
-     
-     // Verify using the DSL-generated content
-     expect(visibleMessage).to.include(screenContent.localizedText.pre_approved_message);
-   });
+   ```clojure
+   (Then "I should see a localised pre-approved message in the appropriate language" 
+     (fn []
+       (let [visible-message (loans-overview-page/get-topup-offer-message)
+             
+             ;; Evaluate the expected message using the DSL
+             screen-content (core/evaluate
+                              (get-in loan-topup-journey [:initialOfferScreen])
+                              dsl-environment)]
+         
+         ;; Verify using the DSL-generated content
+         (is (string/includes? 
+               visible-message 
+               (get-in screen-content [:localizedText :pre_approved_message]))))))
    ```
 
 ### Cross-Platform Testing Architecture
@@ -250,67 +237,55 @@ The DSL connects to test fixtures through a carefully designed interface:
 Our testing infrastructure supports multiple platforms while using the same functional DSL:
 
 1. **Base Page Object**:
-   ```javascript
-   class LoanTopupPage {
-     // Abstract methods to be implemented by platform-specific subclasses
-     async getAmountOptions() {
-       throw new Error("Must be implemented by platform-specific subclass");
-     }
+   ```clojure
+   (defprotocol LoanTopupPage
+     ;; Abstract methods to be implemented by platform-specific implementations
+     (get-amount-options [this])
+     (select-amount [this amount])
      
-     async selectAmount(amount) {
-       throw new Error("Must be implemented by platform-specific subclass");
-     }
-     
-     // Shared methods that use the platform-specific implementations
-     async selectPresetAmount(index) {
-       const options = await this.getAmountOptions();
-       return this.selectAmount(options[index]);
-     }
-   }
+     ;; Shared methods that use the platform-specific implementations
+     (select-preset-amount [this index]
+       (let [options (get-amount-options this)]
+         (select-amount this (nth options index)))))
    ```
 
 2. **Platform-Specific Implementations**:
-   ```javascript
-   // iOS implementation
-   class iOSLoanTopupPage extends LoanTopupPage {
-     async getAmountOptions() {
-       return await this.driver.findElements(this.ios.amountOptionSelector)
-         .map(element => element.getText());
-     }
+   ```clojure
+   ;; Platform-Specific Implementations
+   ;; iOS implementation
+   (defrecord IOSLoanTopupPage []
+     LoanTopupPage
+     (get-amount-options [this]
+       (map #(.getText %)
+         (.findElements driver ios-amount-option-selector)))
      
-     async selectAmount(amount) {
-       // iOS-specific implementation
-     }
-   }
-   
-   // Android implementation
-   class AndroidLoanTopupPage extends LoanTopupPage {
-     async getAmountOptions() {
-       return await this.driver.findElements(this.android.amountOptionSelector)
-         .map(element => element.getText());
-     }
+     (select-amount [this amount]
+       ;; iOS-specific implementation
+       ))
+
+   ;; Android implementation
+   (defrecord AndroidLoanTopupPage []
+     LoanTopupPage
+     (get-amount-options [this]
+       (map #(.getText %)
+         (.findElements driver android-amount-option-selector)))
      
-     async selectAmount(amount) {
-       // Android-specific implementation
-     }
-   }
+     (select-amount [this amount]
+       ;; Android-specific implementation
+       ))
    ```
 
 3. **Platform Determination Logic**:
-   ```javascript
-   // Factory function to get the right page object
-   function getLoanTopupPage() {
-     if (config.platform === 'ios') {
-       return new iOSLoanTopupPage();
-     } else if (config.platform === 'android') {
-       return new AndroidLoanTopupPage();
-     } else {
-       return new WebLoanTopupPage();
-     }
-   }
-   
-   // Used in step definitions
-   const loanTopupPage = getLoanTopupPage();
+   ```clojure
+   ;; Factory function to get the right page object
+   (defn get-loan-topup-page []
+     (case config/platform
+       "ios" (->IOSLoanTopupPage)
+       "android" (->AndroidLoanTopupPage)
+       "web" (->WebLoanTopupPage)))
+
+   ;; Used in step definitions
+   (def loan-topup-page (get-loan-topup-page))
    ```
 
 ## Code Generation from .finapp to Platform-Specific Code

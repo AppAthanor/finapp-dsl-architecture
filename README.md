@@ -7,7 +7,7 @@ This monorepo contains a complete architecture for specifying, generating, and v
 We're using three complementary approaches to define, document, and implement financial application features:
 
 1. **Gherkin BDD Specifications** (.feature files) - Human-readable scenarios that define application behavior from a user perspective
-2. **Functional DSL Implementation** (.js files) - A JavaScript implementation of a functional programming model that powers test execution and business logic
+2. **Functional DSL Implementation** (.clj files) - A Clojure implementation of a functional programming model that powers test execution and business logic
 3. **UI/UX Specification DSL** (.finapp files) - A declarative specification of the UI, screens, navigation, and business logic
 
 This multi-layered approach enables product, development, and testing teams to collaborate effectively with clear separation of concerns.
@@ -33,7 +33,7 @@ finapp-dsl-architecture/
 │   │           └── README.md         # Lending domain documentation
 │   ├── step-definitions/       # Cucumber step implementations
 │   └── dsl/                    # Domain-Specific Language implementations
-│       ├── functional/         # Functional DSLs (.js files)
+│       ├── functional-clj/     # Functional DSLs (.clj files)
 │       └── finapp/             # UI/UX DSLs (.finapp files)
 │
 ├── code-generation/            # Code Generation Engine
@@ -73,21 +73,21 @@ Our architecture uses three complementary DSLs, each serving a distinct purpose:
     Then I should see detailed impact calculations in my local currency
   ```
 
-#### Functional DSL (.js)
-- Implements a formal model of business logic in JavaScript
+#### Functional DSL (.clj)
+- Implements a formal model of business logic in Clojure
 - Created by domain experts and engineers
 - Defines an evaluator for business rules and expressions
 - Provides a precise, executable specification of expected behavior
 - Example:
-  ```javascript
-  // Business rule for top-up amount validation
-  const topupAmountLimitsRule = makeBusinessRule(
-    'BR001',
-    // Condition expression that checks if amount is within segment limits
-    makeLambda(['customer', 'region', 'amount'], /* condition expression */),
-    // Action expression that validates or adjusts the amount
-    makeLambda(['customer', 'region', 'amount'], /* action expression */)
-  );
+  ```clojure
+  ;; Business rule for top-up amount validation
+  (def topup-amount-limits-rule
+    (core/make-business-rule
+      "BR001"
+      ;; Condition expression that checks if amount is within segment limits
+      (core/make-lambda ["customer" "region" "amount"] /* condition expression */),
+      ;; Action expression that validates or adjusts the amount
+      (core/make-lambda ["customer" "region" "amount"] /* action expression */)))
   ```
 
 #### UI/UX Specification DSL (.finapp)
@@ -108,7 +108,7 @@ Here's how a feature flows through our complete architecture:
 
 #### Stage 1: Specification
 1. Business requirements are captured as Gherkin scenarios in `.feature` files
-2. Business rules are formalized in the functional DSL (`.js`)
+2. Business rules are formalized in the functional DSL (`.clj`)
 3. UI/UX specifications are defined in the UI/UX DSL (`.finapp`)
 
 #### Stage 2: Code Generation
@@ -217,22 +217,19 @@ Scenario: Wealth segment customers in Hong Kong see special promotional messages
 ```
 
 #### Functional DSL Implementation
-```javascript
-const wealthSegment = makeCustomerSegment('Wealth', {
-  benefits: {
-    UK: ['Premier rate guarantee and priority service'],
-    HK: ['Jade member priority processing and rate discount']
-  }
-});
+```clojure
+(def wealth-segment
+  (core/make-customer-segment "Wealth" {:benefits {:UK ["Premier rate guarantee and priority service"]
+                                                   :HK ["Jade member priority processing and rate discount"]}}))
 
-// Business rule for segment benefits
-const segmentBenefitsRule = makeBusinessRule(
-  'BR005',
-  // Condition: customer has a segment with benefits
-  makeLambda(['customer', 'region'], /* condition expression */),
-  // Action: return segment benefits
-  makeLambda(['customer', 'region'], /* action expression */)
-);
+;; Business rule for segment benefits
+(def segment-benefits-rule
+  (core/make-business-rule
+    "BR005"
+    ;; Condition: customer has a segment with benefits
+    (core/make-lambda ["customer" "region"] /* condition expression */)
+    ;; Action: return segment benefits
+    (core/make-lambda ["customer" "region"] /* action expression */)))
 ```
 
 #### UI/UX DSL Definition

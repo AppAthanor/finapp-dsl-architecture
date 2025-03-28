@@ -26,10 +26,14 @@ specifications/
 │       └── ...                # Other domain-specific steps
 │
 └── dsl/                       # Domain-Specific Language implementations
-    ├── functional/            # Functional DSLs (.js files)
-    │   └── loan-topup-functional-dsl.js  # DSL for loan top-up
+    ├── functional-clj/        # Functional DSLs in Clojure
+    │   └── domains/
+    │       └── lending/
+    │           └── loan_topup_example.clj  # DSL for loan top-up in Clojure
     └── finapp/                # UI/UX DSLs (.finapp files)
-        └── loan-topup.finapp  # UI/UX specification for loan top-up
+        └── domains/
+            └── lending/
+                └── loan-topup.finapp  # UI/UX specification for loan top-up
 ```
 
 ## Key Components
@@ -76,57 +80,68 @@ Given('I have an existing loan that is eligible for top-up', async function() {
 
 ### Domain-Specific Languages
 
-#### Functional DSL (.js)
+#### Functional DSL (.clj)
 
 The functional DSL provides a formal model of business rules:
 
-```javascript
-// Business rule for top-up amount validation
-const topupAmountLimitsRule = makeBusinessRule(
-  'BR001',
-  // Condition: Amount is within valid range for segment and region
-  makeLambda(
-    ['customer', 'region', 'amount'],
-    makeApplication(
-      makeVariable('and'),
-      [
-        // Min amount check
-        makeApplication(
-          makeVariable('>='),
-          [
-            makeVariable('amount'),
-            makeApplication(
-              makeVariable('getSegmentMinTopupAmount'),
-              [
-                makeApplication(makeVariable('getCustomerSegment'), [makeVariable('customer')]), 
-                makeApplication(makeVariable('getRegionCode'), [makeVariable('region')])
-              ]
-            )
-          ]
-        ),
-        // Max amount check
-        makeApplication(
-          makeVariable('<='),
-          [
-            makeVariable('amount'),
-            makeApplication(
-              makeVariable('getSegmentMaxTopupAmount'),
-              [
-                makeApplication(makeVariable('getCustomerSegment'), [makeVariable('customer')]), 
-                makeApplication(makeVariable('getRegionCode'), [makeVariable('region')])
-              ]
-            )
-          ]
-        )
-      ]
-    )
-  ),
-  // Action: Either return the amount or adjust it
-  makeLambda(
-    ['customer', 'region', 'amount'],
-    /* ... */
-  )
-);
+```clojure
+;; Loan top-up DSL example in Clojure
+(def render-amount-selection-screen
+  (core/make-lambda
+    ["customer" "region" "currentDateTime"]
+    (core/make-sequence
+      [(core/make-assignment
+         (core/make-variable "segment")
+         (core/make-application
+           (core/make-variable "getCustomerSegment")
+           [(core/make-variable "customer")]))
+       ;; More expressions...
+       ])))
+```
+
+#### Functional DSL (.clj)
+- Defines a formal executable model of business rules in Clojure
+- Creates evaluators for testing edge cases and conditions
+- Supports multiple regions and customer segments
+
+```clojure
+;; Business rule for top-up amount validation
+(def topup-amount-limits-rule
+  (core/make-business-rule
+    "BR001"
+    ;; Condition that checks if amount is within limits
+    (core/make-lambda
+      ["customer" "region" "amount"]
+      (core/make-application
+        (core/make-variable "and")
+        [(core/make-application 
+           (core/make-variable ">=")
+           [(core/make-variable "amount")
+            (core/make-application
+              (core/make-variable "getMinAmount")
+              [(core/make-variable "customer") 
+               (core/make-variable "region")])])
+         (core/make-application
+           (core/make-variable "<=")
+           [(core/make-variable "amount")
+            (core/make-application 
+              (core/make-variable "getMaxAmount")
+              [(core/make-variable "customer")
+               (core/make-variable "region")])])])))
+    ;; Action that validates the amount
+    (core/make-lambda
+      ["customer" "region" "amount"]
+      (core/make-if
+        ;; condition
+        (core/make-application
+          (core/make-variable "isWithinLimits")
+          [(core/make-variable "customer")
+           (core/make-variable "region")
+           (core/make-variable "amount")])
+        ;; then
+        (core/make-variable "amount")
+        ;; else
+        (core/make-quoted {:error "Amount outside limits"})))))
 ```
 
 #### UI/UX DSL (.finapp)
