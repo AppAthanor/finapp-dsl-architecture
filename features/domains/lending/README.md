@@ -1,58 +1,99 @@
-# Lending Domain BDD Specifications
+# Loan Top-up Feature: Multi-DSL Implementation
 
-This directory contains the Behaviour Driven Development (BDD) specifications for lending-related features, including the Loan Top-up journey.
+This directory contains the Loan Top-up feature implementation using our multi-layered Domain-Specific Language (DSL) approach.
 
-## Features
+## Overview
 
-### Loan Top-up
+The Loan Top-up journey allows existing loan customers to borrow additional funds on their current loan without going through a full application process. This creates a streamlined, friction-free experience while maintaining compliance with regulatory requirements.
 
-The [Loan Top-up journey](loan-topup.feature) allows pre-approved customers to borrow additional funds on their existing loan without applying for a new loan. This streamlined process includes:
+## The Three DSL Layers
 
-- Initial offer presentation
-- Amount selection and customisation 
-- Terms and impact review
-- Confirmation and fund disbursement
+Our implementation uses three complementary layers:
 
-The implementation handles:
-- Multiple regions (UK and Hong Kong)
-- Different customer segments (Basic and Wealth)
-- Time-sensitive content (promotional offers, time-of-day messaging)
+### Layer 1: Behavior Specification (.feature)
 
-#### Key Files
+[loan-topup.feature](loan-topup.feature) contains user-focused scenarios written in Gherkin syntax. These scenarios define what the application should do from a business perspective, serving as:
 
-- [loan-topup.feature](loan-topup.feature) - Gherkin feature file with scenarios
-- [loan-topup-steps.js](../../../step-definitions/domain-specific/loan-topup-steps.js) - Step implementations
-- [loan-topup-functional-dsl.js](../../../dsl/loan-topup-functional-dsl.js) - SICP-inspired functional DSL implementation
+- Executable requirements documentation
+- Acceptance criteria for development
+- Test scenarios for validation
 
-#### Testing the Loan Top-up Journey
-
-To run tests for the loan top-up journey:
-
-```bash
-# Run all loan top-up scenarios
-npm test -- --tags @loan-topup
-
-# Run for a specific region
-npm test -- --tags @loan-topup --region UK
-
-# Run for a specific customer segment
-npm test -- --tags @loan-topup --segment Wealth
-
-# Run for specific time scenarios
-npm test -- --tags @loan-topup --time-period evening
+Example:
+```gherkin
+Scenario: Customer in Hong Kong sees regional regulatory information
+  Given I am authenticated in the mobile banking app
+  And I have an existing loan that is eligible for top-up
+  And my current region is set to "HK"
+  When I navigate to the "My Loans" section
+  Then I should see all monetary values in "HKD" format
+  And I should see the regulatory information specific to "HK" including:
+    | HKMA approval notice | Cooling-off period | Risk disclosure |
 ```
 
-## Functional DSL Approach
+### Layer 2: Test Implementation DSL (.js)
 
-The Loan Top-up journey implements a functional DSL approach inspired by "Structure and Interpretation of Computer Programs" (SICP) principles:
+[loan-topup-functional-dsl.js](../../../bdd-specifications/dsl/loan-topup-functional-dsl.js) implements a sophisticated functional programming model inspired by SICP (Structure and Interpretation of Computer Programs) principles. This DSL:
 
-1. **Metalinguistic Abstraction** - Creating a domain-specific language for loan features
-2. **Expression Evaluation** - Using a proper evaluator for expressions
-3. **Environment Model** - Implementing lexical scoping and closures
-4. **Data Abstraction** - Separating implementation from interface
-5. **Business Rules as Data** - Representing rules as expressions that can be analyzed
+- Defines an expression evaluator with proper lexical scoping
+- Implements business rules as expressions
+- Provides region and segment-specific calculations
+- Handles time-sensitive content logic
+- Powers the test validation through a clean abstraction layer
 
-This approach allows for elegant handling of complex variations in region, customer segment, and time-sensitive content.
+Key concepts in this implementation:
+- Expression types (variables, applications, lambdas, conditionals)
+- Environment model with frames and bindings
+- Business rule constructors with condition/action pairs
+- Domain-specific primitives for regions and customer segments
+
+### Layer 3: UI/UX Specification DSL (.finapp)
+
+[loan-topup.finapp](../../../bdd-specifications/dsl/finapp/loan-topup.finapp) provides a declarative specification of the user interface, screens, and interactions. This format:
+
+- Defines screens, components, and layouts
+- Specifies data models and validation rules
+- Declares navigation flows and transitions
+- Configures API endpoints and contracts
+- Handles regional variations and localizations
+
+This specification can be consumed by development teams to implement the feature consistently across iOS, Android, and web platforms.
+
+## Regional and Segment Considerations
+
+The Loan Top-up implementation handles variations across:
+
+### Regions
+- **United Kingdom**: FCA regulations, GBP currency, UK-specific disclosures
+- **Hong Kong**: HKMA regulations, HKD currency, HK-specific disclosures
+
+### Customer Segments
+- **Basic**: Standard interest rates and limits
+- **Wealth**: Premium interest rates, higher limits, additional benefits
+
+### Time-sensitive Processing
+- Standard business hours: Immediate processing
+- Evening/weekend hours: Modified processing timeframes
+- Holiday periods: Special handling and notifications
+
+## Testing
+
+To test the Loan Top-up feature, the step implementations in [loan-topup-steps.js](../../../bdd-specifications/step-definitions/domain-specific/loan-topup-steps.js) connect the Gherkin scenarios to the functional DSL. The tests can validate:
+
+- Region-specific formatting and content
+- Segment-appropriate offers and limits
+- Time-sensitive processing rules
+- Proper regulatory disclosures
+- Correct calculations and terms
+
+## Using This Approach for Other Features
+
+This multi-layered DSL approach can be applied to other financial features that require:
+- Regional adaptations
+- Customer segmentation
+- Complex business rules
+- Sophisticated UI/UX specifications
+
+It provides a blueprint for creating maintainable, cross-platform specifications that serve both business and technical stakeholders.
 
 ## Related Banking Features
 

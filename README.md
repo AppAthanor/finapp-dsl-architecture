@@ -1,136 +1,96 @@
-# BDD Specifications Repository
+# BDD Specifications with Domain-Specific Languages
 
-This repository contains Behaviour Driven Development (BDD) specifications for our banking applications, organized by business domains. These specifications serve as living documentation of system behavior and form the basis for automated acceptance testing.
+This repository demonstrates a modern approach to specifying and testing financial application features using Behaviour-Driven Development (BDD) combined with Domain-Specific Languages (DSLs).
 
-## Latest Addition: Loan Top-up Journey
+## Core Concepts
 
-We've recently added the [Loan Top-up Journey](features/domains/lending/README.md), which demonstrates:
-- Internationalization for UK and Hong Kong markets
+We're using three complementary approaches to define, document, and test financial application features:
+
+1. **Gherkin BDD Specifications** (.feature files) - Human-readable scenarios that define application behavior from a user perspective
+2. **Functional DSL Implementation** (.js files) - A JavaScript implementation of a functional programming model that powers test execution
+3. **UI/UX Specification DSL** (.finapp files) - A declarative specification of the UI, screens, navigation, and business logic
+
+This multi-layered approach enables product, development, and testing teams to collaborate effectively with clear separation of concerns.
+
+## Loan Top-up Feature
+
+The main feature we're implementing is a loan top-up journey that allows customers to borrow additional funds on their existing loans without applying for a new loan. This feature demonstrates:
+
+- Region-specific functionality (UK and Hong Kong)
 - Customer segmentation (Basic and Wealth)
-- Time-sensitive content handling
-- SICP-inspired functional DSL implementation
-
-This implementation serves as a reference architecture for future journey specifications.
+- Time-sensitive content and processing
+- Complex business rules and validations
 
 ## Repository Structure
 
 ```
 bdd-specifications/
 │
-├── features/                     # Gherkin feature files
-│   ├── domains/                  # Organised by business domains
-│   │   ├── authentication/       # Authentication features
-│   │   ├── payments/             # Payment features
-│   │   ├── lending/              # Lending features (including loan top-up)
-│   │   └── ...                   # Other domains
-│   ├── cross-cutting/            # Cross-domain features
-│   └── meta/                     # Features about the BDD process itself
+├── features/                     # BDD specifications in Gherkin syntax
+│   └── domains/                  # Organized by business domains
+│       └── lending/              # Lending-related features
+│           ├── loan-topup.feature  # Loan top-up BDD scenarios
+│           └── README.md         # Lending domain documentation
 │
-├── step-definitions/             # Step implementation patterns
-│   ├── common/                   # Reusable steps across domains
-│   ├── domain-specific/          # Domain-specific steps
-│   └── support/                  # Support code for steps
-│
-├── templates/                    # Reusable templates
-│
-├── dsl/                          # Domain-specific language definitions
-│   └── loan-topup-functional-dsl.js # Functional DSL for loan top-up
-│
-├── docs/                         # Documentation
-│   ├── getting-started.md
-│   └── best-practices.md
-│
-├── tools/                        # Utilities specific to BDD
-│
-├── tests/                        # Tests for the BDD framework itself
-│
-├── examples/                     # Complete examples
-│
-├── .github/                      # GitHub configuration
-│
-├── config/                       # Configuration files
+├── bdd-specifications/           # Implementation code for tests
+│   ├── step-definitions/         # Cucumber step implementations
+│   │   └── domain-specific/      # Domain-specific step definitions
+│   │       └── loan-topup-steps.js  # Test steps for loan top-up
+│   │
+│   └── dsl/                      # Domain-Specific Language implementations
+│       ├── loan-topup-functional-dsl.js  # Functional DSL for testing
+│       └── finapp/               # UI/UX specification DSL files
+│           └── loan-topup.finapp # Declarative UI/UX specification
 │
 └── README.md                     # This README file
 ```
 
-## Getting Started
+## The Three-Layer Approach
 
-1. Clone this repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Run the tests:
-   ```bash
-   npm test
-   ```
+### 1. BDD Feature Files (.feature)
 
-## Working with BDD Specifications
+Gherkin-syntax files define user-centric scenarios that describe what the application should do from a business perspective. Example:
 
-### Creating New Features
-
-1. Create a new feature file in the appropriate domain directory
-2. Follow the templates in `/templates/scenario-templates/`
-3. Implement step definitions in `/step-definitions/domain-specific/`
-4. Add domain terminology to the appropriate DSL file
-
-### Running Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run tests for a specific domain
-npm test -- --tags @lending
-
-# Run tests for a specific feature
-npm test -- --tags @loan-topup
-
-# Run tests against a specific environment
-npm test -- --env staging
+```gherkin
+Scenario: Customer selects a pre-defined top-up amount in their local currency
+  Given I am authenticated in the mobile banking app
+  And I have an existing loan that is eligible for top-up
+  And I am on the amount selection screen
+  When I select the second pre-defined amount option
+  Then I should see detailed impact calculations in my local currency
 ```
 
-## Functional DSL Approach
+### 2. Functional DSL (.js)
 
-The Loan Top-up journey introduces a functional programming approach inspired by "Structure and Interpretation of Computer Programs" (SICP) principles. This approach:
+A sophisticated functional programming model that:
+- Represents business rules as expressions
+- Uses evaluators to process these expressions
+- Implements environment-based scoping
+- Enables testing of complex business logic
 
-1. Represents business rules as expressions
-2. Uses a proper evaluator for expressions
-3. Implements lexical scoping and closures
-4. Creates clear abstraction barriers
-5. Makes rules analyzable and transformable
+### 3. UI/UX Specification DSL (.finapp)
 
-For more details, see the [Loan Top-up Feature README](features/domains/lending/README.md).
+A declarative specification format that defines:
+- Screens, components, and layouts
+- Data models and validation rules
+- Navigation paths and transitions
+- API endpoints and contracts
+- Regional variations and localizations
 
-## Key Domain Areas
+## Using This Repository
 
-| Domain | Description | Key Features |
-|--------|-------------|--------------|
-| Authentication | User identity and access | Login, registration, account recovery |
-| Payments | Money transfers and payments | Domestic transfers, international payments, scheduled payments |
-| Lending | Borrowing products and services | Loan top-up, mortgage applications, overdrafts |
-| Accounts | Account management | Account opening, statements, transactions |
-| Cards | Card management | Card applications, PIN management, card controls |
-| Investments | Investment products | Trading, portfolios, fund selection |
+This repository serves as a blueprint for implementing the multi-DSL approach to financial application specification. It demonstrates best practices for:
 
-## Contributing
+1. Organizing specifications by domain
+2. Creating clear separation between different specification layers
+3. Handling regional and segment-specific variations
+4. Implementing time-sensitive and conditional content
+5. Defining reusable components and patterns
 
-1. Fork this repository
-2. Create a feature branch
-3. Add or modify specifications
-4. Ensure all tests pass
-5. Submit a pull request
+## Getting Started
 
-Please follow our [contribution guidelines](.github/CONTRIBUTING.md) when submitting changes.
+1. Browse the `.feature` files to understand the expected behaviors
+2. Review the functional DSL implementation to see the testing approach
+3. Examine the `.finapp` files to understand the UI specification format
 
-## Best Practices
-
-See our [BDD Best Practices](docs/best-practices.md) document for guidance on:
-- Writing effective Gherkin scenarios
-- Creating reusable step definitions
-- Managing test data
-- Organizing features by domain
-
-## Contact
-
-For questions or support, contact the BDD Framework team.
+For more details on the lending domain implementation, see the [Lending Domain README](features/domains/lending/README.md).
