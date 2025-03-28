@@ -4,7 +4,10 @@ const LoanTopupPage = require('../../support/pages/loan-topup.page');
 const LoansOverviewPage = require('../../support/pages/loans-overview.page');
 const NotificationService = require('../../support/services/notification.service');
 const AccountService = require('../../support/services/account.service');
-const FunctionalDSL = require('../../dsl/loan-topup-functional-dsl');
+
+// Import the Clojure DSL through a Node.js bridge
+const ClojureDSL = require('../../support/bridges/clojure-dsl-bridge');
+const FunctionalDSL = ClojureDSL.loadDSL('../../dsl/functional-clj/domains/lending/loan_topup_example');
 
 // Page objects
 const loansOverviewPage = new LoansOverviewPage();
@@ -19,7 +22,7 @@ Given('I am authenticated in the mobile banking app', async function() {
   await this.authenticate();
   
   // Initialize DSL environment with empty frame
-  dslEnvironment = { frame: {}, parent: null };
+  dslEnvironment = FunctionalDSL.createGlobalEnvironment();
 });
 
 Given('I have an existing loan that is eligible for top-up', async function() {
