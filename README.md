@@ -1,55 +1,57 @@
-# BDD Specifications with Domain-Specific Languages
+# FinApp Multi-DSL Architecture
 
-This repository demonstrates a modern approach to specifying and testing financial application features using Behaviour-Driven Development (BDD) combined with Domain-Specific Languages (DSLs).
+This monorepo contains a complete architecture for specifying, generating, and validating financial applications using a multi-layered Domain-Specific Language (DSL) approach.
 
 ## Core Concepts
 
-We're using three complementary approaches to define, document, and test financial application features:
+We're using three complementary approaches to define, document, and implement financial application features:
 
 1. **Gherkin BDD Specifications** (.feature files) - Human-readable scenarios that define application behavior from a user perspective
-2. **Functional DSL Implementation** (.js files) - A JavaScript implementation of a functional programming model that powers test execution
+2. **Functional DSL Implementation** (.js files) - A JavaScript implementation of a functional programming model that powers test execution and business logic
 3. **UI/UX Specification DSL** (.finapp files) - A declarative specification of the UI, screens, navigation, and business logic
 
 This multi-layered approach enables product, development, and testing teams to collaborate effectively with clear separation of concerns.
 
-## Repository Ecosystem
+## Monorepo Structure
 
-This BDD Specifications Repository is one of four interconnected repositories that form our complete application development ecosystem:
+This repository is organized into four main areas, each previously planned as separate repositories:
 
-1. **Core Framework Repository**
-   - Central shared libraries and utilities
-   - Common configuration and standards
-   - Integration interfaces for other components
-   - Documentation hub linking to all components
-
-2. **BDD Specifications Repository** (this repository)
-   - Feature files and BDD scenarios
-   - Acceptance criteria templates
-   - Domain-specific language definitions
-   - Behaviour validation frameworks
-
-3. **Code Generation Engine Repository**
-   - Templates and generation rules
-   - Transformation logic
-   - Target platform adapters
-   - Quality assurance checks
-
-4. **Output Management Repository**
-   - Generated code management
-   - Validation and verification tools
-   - Deployment utilities
-   - Feedback mechanisms to BDD layer
-
-### Development Guidelines
-
-When working across these repositories, follow these guidelines:
-
-- **Core libraries and utilities** should be placed in the Core Framework Repository
-- **Specifications, DSLs, and test scenarios** belong in this BDD Specifications Repository
-- **Code generation templates and transformers** should go in the Code Generation Engine Repository
-- **Generated outputs and deployment scripts** belong in the Output Management Repository
-
-All four repositories work together in the complete workflow, with this BDD Specifications Repository serving as the source of truth for application behavior.
+```
+finapp-dsl-architecture/
+│
+├── core/                       # Core Framework
+│   ├── lib/                    # Central shared libraries and utilities
+│   ├── config/                 # Common configuration and standards
+│   ├── integration/            # Integration interfaces for other components
+│   └── docs/                   # Documentation hub linking all components
+│
+├── specifications/             # BDD Specifications
+│   ├── features/               # Gherkin feature files
+│   │   └── domains/            # Organized by business domains
+│   │       └── lending/        # Lending-related features
+│   │           ├── loan-topup.feature  # Loan top-up BDD scenarios
+│   │           └── README.md         # Lending domain documentation
+│   ├── step-definitions/       # Cucumber step implementations
+│   └── dsl/                    # Domain-Specific Language implementations
+│       ├── functional/         # Functional DSLs (.js files)
+│       └── finapp/             # UI/UX DSLs (.finapp files)
+│
+├── code-generation/            # Code Generation Engine
+│   ├── parsers/                # Parsers for .finapp files
+│   ├── templates/              # Code generation templates
+│   ├── transformers/           # Transformation logic
+│   └── adapters/               # Target platform adapters
+│
+├── output/                     # Output Management
+│   ├── generated/              # Generated code
+│   │   ├── ios/                # Generated iOS code
+│   │   ├── android/            # Generated Android code
+│   │   └── web/                # Generated web code
+│   ├── validation/             # Validation and verification tools
+│   └── deployment/             # Deployment utilities
+│
+└── README.md                   # This README file
+```
 
 ## How Our Multi-DSL Architecture Works
 
@@ -124,7 +126,7 @@ Here's how a feature flows through our complete architecture:
 4. Cross-platform adapters ensure tests work consistently on all platforms
 
 #### Stage 4: Validation & Deployment
-1. The Output Management Repository runs verification on the generated code
+1. The Output Management component runs verification on the generated code
 2. Automated tests validate the implementations against the specifications
 3. Successful builds are deployed to testing environments
 4. Results feed back to inform future specifications
@@ -282,94 +284,32 @@ Then('I should see {string} displayed prominently', async function(segmentBenefi
 
 ### 6. Key Integration Points
 
-Our repositories connect through:
-- Shared domain models across all repositories
-- Cross-repository references (Git submodules or package dependencies)
-- Standardized interfaces between components
-- Common configuration for consistency
+Our monorepo connects through:
+- Shared domain models across all components
+- Well-defined interfaces between components
+- Standardized configuration for consistency
 - Integration test suites that validate the entire pipeline
 
 By understanding this architecture, developers can effectively contribute to the right parts of the system while maintaining the integrity of the overall workflow.
 
-## Loan Top-up Feature
+## Development Guidelines
 
-The main feature we're implementing is a loan top-up journey that allows customers to borrow additional funds on their existing loans without applying for a new loan. This feature demonstrates:
+When working in this monorepo, follow these guidelines:
 
-- Region-specific functionality (UK and Hong Kong)
-- Customer segmentation (Basic and Wealth)
-- Time-sensitive content and processing
-- Complex business rules and validations
-
-## Repository Structure
-
-```
-bdd-specifications/
-│
-├── features/                     # BDD specifications in Gherkin syntax
-│   └── domains/                  # Organized by business domains
-│       └── lending/              # Lending-related features
-│           ├── loan-topup.feature  # Loan top-up BDD scenarios
-│           └── README.md         # Lending domain documentation
-│
-├── bdd-specifications/           # Implementation code for tests
-│   ├── step-definitions/         # Cucumber step implementations
-│   │   └── domain-specific/      # Domain-specific step definitions
-│   │       └── loan-topup-steps.js  # Test steps for loan top-up
-│   │
-│   └── dsl/                      # Domain-Specific Language implementations
-│       ├── loan-topup-functional-dsl.js  # Functional DSL for testing
-│       └── finapp/               # UI/UX specification DSL files
-│           └── loan-topup.finapp # Declarative UI/UX specification
-│
-└── README.md                     # This README file
-```
-
-## The Three-Layer Approach
-
-### 1. BDD Feature Files (.feature)
-
-Gherkin-syntax files define user-centric scenarios that describe what the application should do from a business perspective. Example:
-
-```gherkin
-Scenario: Customer selects a pre-defined top-up amount in their local currency
-  Given I am authenticated in the mobile banking app
-  And I have an existing loan that is eligible for top-up
-  And I am on the amount selection screen
-  When I select the second pre-defined amount option
-  Then I should see detailed impact calculations in my local currency
-```
-
-### 2. Functional DSL (.js)
-
-A sophisticated functional programming model that:
-- Represents business rules as expressions
-- Uses evaluators to process these expressions
-- Implements environment-based scoping
-- Enables testing of complex business logic
-
-### 3. UI/UX Specification DSL (.finapp)
-
-A declarative specification format that defines:
-- Screens, components, and layouts
-- Data models and validation rules
-- Navigation paths and transitions
-- API endpoints and contracts
-- Regional variations and localizations
-
-## Using This Repository
-
-This repository serves as a blueprint for implementing the multi-DSL approach to financial application specification. It demonstrates best practices for:
-
-1. Organizing specifications by domain
-2. Creating clear separation between different specification layers
-3. Handling regional and segment-specific variations
-4. Implementing time-sensitive and conditional content
-5. Defining reusable components and patterns
+- **Core Framework** (`/core`): Use for shared utilities, interfaces, and documentation
+- **BDD Specifications** (`/specifications`): Contains feature files, DSLs, and test implementations
+- **Code Generation Engine** (`/code-generation`): Contains parsers, templates, and transformation logic
+- **Output Management** (`/output`): Contains generated code, validation and deployment tools
 
 ## Getting Started
 
-1. Browse the `.feature` files to understand the expected behaviors
-2. Review the functional DSL implementation to see the testing approach
-3. Examine the `.finapp` files to understand the UI specification format
+1. Clone this repository
+2. Initialize the monorepo components:
+   ```bash
+   npm run init
+   ```
+3. Browse the `.feature` files to understand the expected behaviors
+4. Review the functional DSL implementation to see the testing approach
+5. Examine the `.finapp` files to understand the UI specification format
 
-For more details on the lending domain implementation, see the [Lending Domain README](features/domains/lending/README.md).
+For more details on the loan top-up implementation, see the [Lending Domain README](specifications/features/domains/lending/README.md).
