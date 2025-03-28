@@ -32,7 +32,7 @@ Scenario: Customer in Hong Kong sees regional regulatory information
 
 ### Layer 2: Test Implementation DSL (.js)
 
-[loan-topup-functional-dsl.js](../../../bdd-specifications/dsl/loan-topup-functional-dsl.js) implements a sophisticated functional programming model inspired by SICP (Structure and Interpretation of Computer Programs) principles. This DSL:
+[loan-topup-functional-dsl.js](../../../dsl/functional/domains/lending/loan-topup-functional-dsl.js) implements a sophisticated functional programming model inspired by SICP (Structure and Interpretation of Computer Programs) principles. This DSL:
 
 - Defines an evaluator for business rules and expressions
 - Implements business rules as expressions
@@ -48,7 +48,7 @@ Key concepts in this implementation:
 
 ### Layer 3: UI/UX Specification DSL (.finapp)
 
-[loan-topup.finapp](../../../bdd-specifications/dsl/finapp/loan-topup.finapp) provides a declarative specification of the user interface, screens, and interactions. This format:
+[loan-topup.finapp](../../../dsl/finapp/domains/lending/loan-topup.finapp) provides a declarative specification of the user interface, screens, and interactions. This format:
 
 - Defines screens, components, and layouts
 - Specifies data models and validation rules
