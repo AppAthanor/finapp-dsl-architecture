@@ -119,6 +119,53 @@
             text-align: center;
         }
         
+        .hero-image .code-block {
+            display: inline-block;
+            max-width: 100%;
+            margin: 0 auto;
+            text-align: left;
+            background-color: #282a36;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+        
+        .hero-image .code-block pre {
+            margin: 0;
+            padding: 20px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #f8f8f2;
+            overflow-x: auto;
+            background-color: transparent;
+        }
+        
+        .hero-image .code-block .clojure {
+            display: block;
+        }
+        
+        /* Syntax highlighting */
+        .hero-image .code-block .function {
+            color: #8be9fd;
+        }
+        
+        .hero-image .code-block .keyword {
+            color: #ff79c6;
+        }
+        
+        .hero-image .code-block .string {
+            color: #f1fa8c;
+        }
+        
+        .hero-image .code-block .number {
+            color: #bd93f9;
+        }
+        
+        .hero-image .code-block .comment {
+            color: #6272a4;
+        }
+        
         .hero-image img {
             max-width: 100%;
             max-height: 300px;
@@ -302,33 +349,20 @@
                 <a href="doc/guides/getting-started.html" class="cta-button">Get Started →</a>
             </div>
             <div class="hero-image">
-                <svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="50" y="50" width="300" height="200" rx="10" fill="#f6f8fa" stroke="#e1e4e8" stroke-width="2"/>
-                    <text x="200" y="110" font-family="monospace" font-size="14" fill="#0366d6" text-anchor="middle">
-                        (dsl/make-business-rule
-                    </text>
-                    <text x="200" y="130" font-family="monospace" font-size="14" fill="#0366d6" text-anchor="middle">
-                        "R001"
-                    </text>
-                    <text x="200" y="150" font-family="monospace" font-size="14" fill="#0366d6" text-anchor="middle">
-                        (dsl/make-lambda ["customer" "region"]
-                    </text>
-                    <text x="200" y="170" font-family="monospace" font-size="14" fill="#0366d6" text-anchor="middle">
-                        (dsl/make-application >=
-                    </text>
-                    <text x="200" y="190" font-family="monospace" font-size="14" fill="#0366d6" text-anchor="middle">
-                        [(dsl/make-application :balance
-                    </text>
-                    <text x="200" y="210" font-family="monospace" font-size="14" fill="#0366d6" text-anchor="middle">
-                        [(dsl/make-variable "customer")]) 1000]))
-                    </text>
-                    <text x="200" y="230" font-family="monospace" font-size="14" fill="#0366d6" text-anchor="middle">
-                        (dsl/make-lambda ["customer" "region"]
-                    </text>
-                    <text x="200" y="250" font-family="monospace" font-size="14" fill="#0366d6" text-anchor="middle">
-                        (dsl/make-quoted "Eligible")))
-                    </text>
-                </svg>
+                <div class="code-block">
+                    <pre><code class="clojure"><span class="function">(dsl/make-business-rule</span>
+  <span class="string">"R001"</span>
+  <span class="comment">;; Condition: check if customer balance >= 1000</span>
+  <span class="function">(dsl/make-lambda</span> [<span class="string">"customer"</span> <span class="string">"region"</span>]
+    <span class="function">(dsl/make-application</span> >= 
+      [<span class="function">(dsl/make-application</span> <span class="keyword">:balance</span>
+        [<span class="function">(dsl/make-variable</span> <span class="string">"customer"</span>)])
+       <span class="number">1000</span>]))
+  
+  <span class="comment">;; Action: return "Eligible" when condition is true</span>
+  <span class="function">(dsl/make-lambda</span> [<span class="string">"customer"</span> <span class="string">"region"</span>]
+    <span class="function">(dsl/make-quoted</span> <span class="string">"Eligible"</span>)))</code></pre>
+                </div>
             </div>
         </section>
         
