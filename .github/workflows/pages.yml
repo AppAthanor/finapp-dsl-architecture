@@ -1,13 +1,19 @@
-name: Deploy GitHub Pages
+name: Documentation and GitHub Pages
 
 on:
   push:
     branches:
+      - main
       - gh-pages
+    paths:
+      - 'specifications/dsl/functional-clj/finapp-dsl/src/**'
+      - 'specifications/dsl/functional-clj/finapp-dsl/doc/**'
+      - 'specifications/dsl/functional-clj/finapp-dsl/project.clj'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -16,20 +22,64 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  generate-docs:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Install Leiningen
+        uses: DeLaGuardo/setup-clojure@10.3
+        with:
+          lein: 2.9.10
+      
+      - name: Generate documentation
+        working-directory: specifications/dsl/functional-clj/finapp-dsl
+        run: |
+          chmod +x doc/generate_docs.sh
+          ./doc/generate_docs.sh
+      
+      - name: Configure Git for GitHub Actions
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+      
+      - name: Copy documentation to gh-pages branch
+        run: |
+          git fetch
+          git checkout gh-pages
+          mkdir -p doc/api
+          cp -r specifications/dsl/functional-clj/finapp-dsl/doc/api/* doc/api/
+          git add doc/api
+          git commit -m "Update API documentation [skip ci]" || echo "No changes to commit"
+          git push origin gh-pages
+          git checkout main
+  
+  deploy-pages:
+    if: github.ref == 'refs/heads/gh-pages'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
       - name: Setup Pages
         uses: actions/configure-pages@v3
+      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
           path: '.'
+      
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2 
