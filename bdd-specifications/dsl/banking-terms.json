@@ -1,0 +1,377 @@
+{
+    "domain": "loans",
+    "version": "1.1.0",
+    "description": "Standardized terminology for loan-related features with internationalization support",
+    "regions": {
+      "UK": {
+        "rule": "Top-up amount must be between the minimum and maximum pre-approved limits for the customer's segment and region",
+        "rationale": "Ensures the additional borrowing is within affordability parameters appropriate for customer segment and local market conditions",
+        "implementation": {
+          "validation": "topUpAmount >= customerSegment[region].minTopupAmount && topUpAmount <= customerSegment[region].maxTopupAmount",
+          "error_message_key": "amount_limit_error"
+        }
+      },
+      {
+        "id": "BR002",
+        "rule": "The remaining term does not change as a result of the top-up",
+        "rationale": "Maintains the original loan end date while adjusting the monthly payment",
+        "implementation": {
+          "validation": "newLoanTerm === currentLoanTerm",
+          "error_message_key": "term_modification_error"
+        }
+      },
+      {
+        "id": "BR003",
+        "rule": "Pre-approval offers are valid for 14 days from initial presentation across all regions",
+        "rationale": "Ensures offers are based on current financial circumstances",
+        "implementation": {
+          "validation": "currentDate <= offerPresentationDate + 14days",
+          "error_message_key": "offer_expired_error"
+        }
+      },
+      {
+        "id": "BR004",
+        "rule": "Customers must explicitly confirm agreement to terms before disbursement, in compliance with local regulations",
+        "rationale": "Regulatory requirement for informed consent that varies by region",
+        "implementation": {
+          "UK": {
+            "validation": "termsAgreementCheckbox === true && fca_disclosure_viewed === true",
+            "regulatory_reference": "FCA CONC 4.2"
+          },
+          "HK": {
+            "validation": "termsAgreementCheckbox === true && hkma_disclosure_viewed === true",
+            "regulatory_reference": "HKMA module CR-G-10"
+          },
+          "error_message_key": "terms_agreement_error"
+        }
+      },
+      {
+        "id": "BR005",
+        "rule": "Top-up funds must be disbursed to the same account as the original loan or a verified account of the customer",
+        "rationale": "Security measure to prevent fraud",
+        "implementation": {
+          "validation": "disbursementAccount === originalLoanAccount || verifiedCustomerAccounts.includes(disbursementAccount)",
+          "error_message_key": "invalid_disbursement_account_error"
+        }
+      },
+      {
+        "id": "BR006",
+        "rule": "All monetary values must be displayed in the local currency format for the customer's region",
+        "rationale": "Ensures clear understanding of financial information in familiar format",
+        "implementation": {
+          "UK": {
+            "format": "£#,##0.00",
+            "locale": "en-GB"
+          },
+          "HK": {
+            "format": "HK$#,##0.00",
+            "locale": ["en-HK", "zh-HK"]
+          }
+        }
+      },
+      {
+        "id": "BR007",
+        "rule": "All content must be presented in the customer's preferred language when available in that region",
+        "rationale": "Ensures customers can fully understand all loan top-up details in their preferred language",
+        "implementation": {
+          "UK": {
+            "available_languages": ["en-GB"]
+          },
+          "HK": {
+            "available_languages": ["en-HK", "zh-HK"]
+          },
+          "fallback_language": "en"
+        }
+      },
+      {
+        "id": "BR008",
+        "rule": "Interest rates must be determined based on customer segment and region",
+        "rationale": "Different customer segments qualify for different rates in each region",
+        "implementation": {
+          "rate_determination": "customerSegment[region].interestRate",
+          "display_key": "interest_rate_display"
+        }
+      },
+      {
+        "id": "BR009",
+        "rule": "Promotional offers must be displayed based on current date, time, and customer eligibility",
+        "rationale": "Ensures time-sensitive offers are only displayed when valid",
+        "implementation": {
+          "validation": "currentDate >= promotion.startDate && currentDate <= promotion.endDate && isEligibleForPromotion(customer, promotion)",
+          "display_key": "promotional_banner"
+        }
+      },
+      {
+        "id": "BR010",
+        "rule": "Time-sensitive processing information must be displayed based on current time",
+        "rationale": "Sets appropriate expectations for processing times based on banking hours",
+        "implementation": {
+          "message_determination": "getProcessingTimeframeMessage(region, currentDateTime, isHoliday)",
+          "display_key": "processing_timeframe_message"
+        }
+      },
+      {
+        "id": "BR011",
+        "rule": "Wealth segment customers must receive their segment-specific benefits on eligible loan top-ups",
+        "rationale": "Delivers premium customer experience to higher-value customers",
+        "implementation": {
+          "validation": "customerSegment === 'Wealth' && topUpAmount >= customerSegment[region].minTopupAmount",
+          "benefits_key": "wealth_segment_benefits",
+          "display_key": "segment_benefits_message"
+        }
+      },
+      {
+        "id": "BR012",
+        "rule": "All dates must be displayed in the region-specific format",
+        "rationale": "Ensures dates are understood correctly according to local conventions",
+        "implementation": {
+          "UK": {
+            "format": "DD/MM/YYYY",
+            "locale": "en-GB"
+          },
+          "HK": {
+            "format": "DD/MM/YYYY",
+            "locale": ["en-HK", "zh-HK"]
+          }
+        }
+      }
+    ],
+    
+    "internationalisation": {
+      "key_content_elements": [
+        "pre_approved_message",
+        "cta_view_offer",
+        "cta_no_thanks",
+        "cta_continue",
+        "cta_accept",
+        "cta_go_back",
+        "cta_confirm_topup",
+        "terms_agreement_checkbox",
+        "success_message",
+        "error_messages"
+      ],
+      "translation_process": "All key content elements must be translated into all supported languages for each region",
+      "testing_requirements": "UI must be tested with all supported languages to ensure proper text display and layout"
+    }
+  }"currency": "GBP",
+        "currency_symbol": "£",
+        "date_format": "DD/MM/YYYY",
+        "regulatory_body": "FCA",
+        "cooling_off_period": "14 days",
+        "language": "en-GB",
+        "translations_key": "uk_translations"
+      },
+      "HK": {
+        "currency": "HKD",
+        "currency_symbol": "$",
+        "date_format": "DD/MM/YYYY",
+        "regulatory_body": "HKMA",
+        "cooling_off_period": "14 days",
+        "languages": ["en-HK", "zh-HK"],
+        "translations_key": "hk_translations"
+      }
+    },
+    
+    "customer_segments": {
+      "Basic": {
+        "description": "Standard retail banking customers",
+        "min_topup_amounts": {
+          "UK": "1000",
+          "HK": "10000"
+        },
+        "max_topup_amounts": {
+          "UK": "25000",
+          "HK": "200000"
+        },
+        "interest_rates": {
+          "UK": "6.9",
+          "HK": "7.2"
+        }
+      },
+      "Wealth": {
+        "description": "Premier or priority banking customers with higher value accounts",
+        "min_topup_amounts": {
+          "UK": "5000",
+          "HK": "50000"
+        },
+        "max_topup_amounts": {
+          "UK": "100000",
+          "HK": "800000"
+        },
+        "interest_rates": {
+          "UK": "5.4",
+          "HK": "5.8"
+        },
+        "benefits": {
+          "UK": ["Preferential rates", "Dedicated relationship manager", "Fee waivers"],
+          "HK": ["Priority processing", "Jade status points", "Fee waivers"]
+        }
+      }
+    },
+    
+    "time_periods": {
+      "standard_hours": {
+        "UK": "08:00-17:00 GMT/BST Mon-Fri",
+        "HK": "09:00-17:00 HKT Mon-Fri"
+      },
+      "evening_hours": {
+        "UK": "17:00-22:00 GMT/BST Mon-Fri",
+        "HK": "17:00-22:00 HKT Mon-Fri"
+      },
+      "night_hours": {
+        "UK": "22:00-08:00 GMT/BST",
+        "HK": "22:00-09:00 HKT"
+      },
+      "weekend_hours": {
+        "UK": "All day Sat-Sun",
+        "HK": "All day Sat-Sun"
+      },
+      "processing_timeframes": {
+        "standard_hours": "Immediate",
+        "non_standard_hours": "Immediate",
+        "holidays": "Next working day"
+      }
+    },
+    
+    "seasonal_promotions": {
+      "UK": [
+        {
+          "name": "Spring Home Improvement",
+          "start_date": "2025-03-01",
+          "end_date": "2025-05-31",
+          "banner_key": "spring_home_banner",
+          "offer": "No fee on home improvement loan top-ups"
+        },
+        {
+          "name": "Summer Holiday Financing",
+          "start_date": "2025-05-01",
+          "end_date": "2025-07-31",
+          "banner_key": "summer_holiday_banner",
+          "offer": "Deferred first payment on holiday loan top-ups"
+        },
+        {
+          "name": "Winter Festive Offer",
+          "start_date": "2025-11-15",
+          "end_date": "2025-12-31",
+          "banner_key": "winter_festive_banner",
+          "offer": "Festive payment holiday option"
+        }
+      ],
+      "HK": [
+        {
+          "name": "Lunar New Year Special",
+          "start_date": "2025-01-15",
+          "end_date": "2025-02-28",
+          "banner_key": "lunar_new_year_banner",
+          "offer": "Lucky rate reduction on loan top-ups"
+        },
+        {
+          "name": "Summer Holiday Financing",
+          "start_date": "2025-05-01",
+          "end_date": "2025-07-31",
+          "banner_key": "summer_holiday_banner_hk",
+          "offer": "Deferred first payment on holiday loan top-ups"
+        },
+        {
+          "name": "Mid-Autumn Festival Offer",
+          "start_date": "2025-09-01",
+          "end_date": "2025-09-30",
+          "banner_key": "mid_autumn_banner",
+          "offer": "Special gifts for loan top-ups during festival period"
+        }
+      ]
+    },
+    
+    "terms": {
+      "loan_topup": {
+        "term": "Loan Top-up",
+        "definition": "Additional borrowing on an existing loan agreement",
+        "synonyms": ["loan increase", "additional borrowing", "borrow more"],
+        "avoid": ["loan extension", "loan refinancing"]
+      },
+      "pre_approval": {
+        "term": "Pre-approval",
+        "definition": "A status indicating the customer has been assessed and preliminarily approved for additional borrowing",
+        "synonyms": ["pre-qualified", "pre-authorised"],
+        "avoid": ["provisional offer", "tentative approval"]
+      },
+      "top_up_amount": {
+        "term": "Top-up amount",
+        "definition": "The additional amount a customer wishes to borrow on their existing loan",
+        "synonyms": ["additional borrowing", "extra funds"],
+        "avoid": ["loan increment", "loan addition"]
+      },
+      "current_balance": {
+        "term": "Current balance",
+        "definition": "The existing outstanding balance on the loan before top-up",
+        "synonyms": ["outstanding balance", "remaining balance"],
+        "avoid": ["loan debt", "unpaid amount"]
+      },
+      "new_total_balance": {
+        "term": "New total balance",
+        "definition": "The combined total of the current outstanding balance plus the top-up amount",
+        "synonyms": ["new loan amount", "new total loan"],
+        "avoid": ["enhanced loan", "increased debt"]
+      },
+      "monthly_payment": {
+        "term": "Monthly payment",
+        "definition": "The regular monthly amount paid to service the loan",
+        "synonyms": ["monthly instalment", "regular payment"],
+        "avoid": ["monthly dues", "monthly obligation"]
+      },
+      "new_monthly_payment": {
+        "term": "New monthly payment",
+        "definition": "The revised monthly payment amount after the top-up is applied",
+        "synonyms": ["adjusted monthly payment", "updated payment amount"],
+        "avoid": ["increased payment", "higher instalment"]
+      },
+      "remaining_term": {
+        "term": "Remaining term",
+        "definition": "The number of months remaining on the loan agreement",
+        "synonyms": ["time left", "outstanding period"],
+        "avoid": ["loan duration", "time to pay"]
+      },
+      "apr": {
+        "term": "APR",
+        "definition": "Annual Percentage Rate - the standardised way of showing the cost of borrowing",
+        "synonyms": ["Annual Percentage Rate", "interest rate including charges"],
+        "avoid": ["interest rate", "borrowing rate"]
+      },
+      "confirmation": {
+        "term": "Confirmation",
+        "definition": "The final step where the customer agrees to the top-up terms",
+        "synonyms": ["final approval", "acceptance"],
+        "avoid": ["sign-off", "agreement", "conclusion"]
+      },
+      "disbursement": {
+        "term": "Disbursement",
+        "definition": "The process of transferring the top-up funds to the customer's account",
+        "synonyms": ["fund transfer", "payment of funds"],
+        "avoid": ["money release", "cash payment"]
+      },
+      "reference_number": {
+        "term": "Reference number",
+        "definition": "A unique identifier for the loan top-up transaction",
+        "synonyms": ["transaction ID", "top-up reference"],
+        "avoid": ["confirmation code", "approval number"]
+      }
+    },
+    "relationships": [
+      {
+        "type": "calculation",
+        "description": "New total balance = Current balance + Top-up amount"
+      },
+      {
+        "type": "calculation",
+        "description": "New monthly payment is based on the New total balance, remaining term, and interest rate"
+      },
+      {
+        "type": "sequence",
+        "description": "Offer presentation → Amount selection → Terms review → Confirmation → Disbursement"
+      }
+    ],
+    "businessRules": [
+      {
+        "id": "BR001",
+        
+  }
