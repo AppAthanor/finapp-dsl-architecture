@@ -12,6 +12,45 @@ We're using three complementary approaches to define, document, and test financi
 
 This multi-layered approach enables product, development, and testing teams to collaborate effectively with clear separation of concerns.
 
+## Repository Ecosystem
+
+This BDD Specifications Repository is one of four interconnected repositories that form our complete application development ecosystem:
+
+1. **Core Framework Repository**
+   - Central shared libraries and utilities
+   - Common configuration and standards
+   - Integration interfaces for other components
+   - Documentation hub linking to all components
+
+2. **BDD Specifications Repository** (this repository)
+   - Feature files and BDD scenarios
+   - Acceptance criteria templates
+   - Domain-specific language definitions
+   - Behaviour validation frameworks
+
+3. **Code Generation Engine Repository**
+   - Templates and generation rules
+   - Transformation logic
+   - Target platform adapters
+   - Quality assurance checks
+
+4. **Output Management Repository**
+   - Generated code management
+   - Validation and verification tools
+   - Deployment utilities
+   - Feedback mechanisms to BDD layer
+
+### Development Guidelines
+
+When working across these repositories, follow these guidelines:
+
+- **Core libraries and utilities** should be placed in the Core Framework Repository
+- **Specifications, DSLs, and test scenarios** belong in this BDD Specifications Repository
+- **Code generation templates and transformers** should go in the Code Generation Engine Repository
+- **Generated outputs and deployment scripts** belong in the Output Management Repository
+
+All four repositories work together in the complete workflow, with this BDD Specifications Repository serving as the source of truth for application behavior.
+
 ## Loan Top-up Feature
 
 The main feature we're implementing is a loan top-up journey that allows customers to borrow additional funds on their existing loans without applying for a new loan. This feature demonstrates:
