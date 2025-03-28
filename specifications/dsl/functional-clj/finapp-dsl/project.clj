@@ -6,7 +6,9 @@
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [org.clojure/clojurescript "1.11.60"]]
   :plugins [[lein-cljsbuild "1.1.8"]
-            [lein-figwheel "0.5.20"]]
+            [lein-figwheel "0.5.20"]
+            [lein-codox "0.10.8"]
+            [lein-marginalia "0.9.1"]]
   :source-paths ["src"]
   :cljsbuild {:builds
               [{:id "dev"
@@ -28,9 +30,28 @@
                            :target :nodejs}}]}
   :figwheel {:server-port 3449
              :repl true}
-  :profiles {:dev {:dependencies [[org.clojure/tools.namespace "1.3.0"]]
+  :profiles {:dev {:dependencies [[org.clojure/tools.namespace "1.3.0"]
+                                 [com.nextjournal/clerk "0.14.919"]
+                                 [metasoarous/oz "2.0.0-alpha5"]]
                    :source-paths ["dev"]}
              :uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}}
   :main ^:skip-aot finapp-dsl.core
-  :target-path "target/%s")
+  :target-path "target/%s"
+  
+  ;; Documentation configuration
+  :codox {:output-path "doc/api"
+          :source-uri "https://github.com/AppAthanor/finapp-dsl-architecture/blob/{version}/{filepath}#L{line}"
+          :metadata {:doc/format :markdown}
+          :themes [:default :rdash]
+          :doc-files ["doc/guides/getting_started.md"
+                     "doc/concepts/regions.md"
+                     "doc/concepts/segments.md"
+                     "doc/concepts/business_rules.md"]
+          :html {:transforms [[:head] [:append [:script {:src "https://cdnjs.cloudflare.com/ajax/libs/mermaid/9.3.0/mermaid.min.js"}]]
+                             [:body] [:append [:script "mermaid.initialize({startOnLoad:true});"]]]}}
+  
+  :aliases {"docs" ["do" ["codox"] ["marg"]]
+            "all-tests" ["test"]
+            "check-all" ["do" ["check"] ["eastwood"] ["kibit"]]
+            "generate-docs" ["run" "-m" "finapp-dsl.doc-generator"]})
