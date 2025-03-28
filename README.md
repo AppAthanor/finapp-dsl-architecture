@@ -4,3 +4,4 @@
 * Acceptance criteria templates
 * Domain-specific language definitions
 * Behaviour validation frameworks
+* Test change for API key setup
