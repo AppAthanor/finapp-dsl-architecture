@@ -5,7 +5,7 @@ This monorepo contains a complete architecture for specifying, generating, and v
 ## Documentation
 
 The API documentation for the FinApp DSL is available online at:
-[https://appanthanor.github.io/finapp-dsl-architecture/](https://appanthanor.github.io/finapp-dsl-architecture/)
+[https://appathanor.github.io/finapp-dsl-architecture/](https://appathanor.github.io/finapp-dsl-architecture/)
 
 This documentation includes complete API references, usage examples, and conceptual guides to help you understand and work with the DSL.
 
