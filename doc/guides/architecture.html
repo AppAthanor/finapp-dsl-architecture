@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinApp DSL Architecture</title>
+    <title>FinApp DSL Architecture Guide</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown.min.css">
+    <link rel="icon" href="https://avatars.githubusercontent.com/u/205288805?s=400&u=826b5f8e51eb0690b6a1da57cfe811a8b68abe3f&v=4">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -95,15 +96,11 @@
         a.home:hover {
             text-decoration: underline;
         }
-        .diagram {
-            text-align: center;
+        .architecture-diagram {
+            max-width: 100%;
             margin: 20px 0;
-        }
-        .code-comparison {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin: 20px 0;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
         }
     </style>
 </head>
@@ -111,378 +108,470 @@
     <a href="../../index.html" class="home">← Back to Home</a>
     
     <div class="header">
-        <h1>FinApp DSL Architecture</h1>
-        <p>Understanding how .finapp files and Clojure implementations work together</p>
+        <h1>FinApp DSL Architecture Guide</h1>
+        <p>A comprehensive guide to the architecture of the FinApp Domain-Specific Language</p>
     </div>
 
     <div class="toc">
         <h3>Table of Contents</h3>
         <ul>
-            <li><a href="#architecture-overview">Architecture Overview</a></li>
-            <li><a href="#finapp-files">The .finapp Files</a></li>
-            <li><a href="#clojure-implementation">The Clojure Implementation</a></li>
-            <li><a href="#code-generation">Code Generation Process</a></li>
-            <li><a href="#ios-implementation">iOS Journey Implementation</a></li>
-            <li><a href="#api-integration">API Integration</a></li>
-            <li><a href="#bridges">Bridge Layers</a></li>
-            <li><a href="#workflow">Complete Workflow</a></li>
+            <li><a href="#overview">1. Overview</a></li>
+            <li><a href="#core-components">2. Core Components</a>
+                <ul>
+                    <li><a href="#dsl-file">2.1 .finapp DSL File</a></li>
+                    <li><a href="#implementation">2.2 Clojure Implementation</a></li>
+                    <li><a href="#runtime">2.3 Evaluation Runtime</a></li>
+                </ul>
+            </li>
+            <li><a href="#separation-of-concerns">3. Separation of Concerns</a>
+                <ul>
+                    <li><a href="#what-layer">3.1 WHAT Layer (.finapp)</a></li>
+                    <li><a href="#how-layer">3.2 HOW Layer (Clojure)</a></li>
+                </ul>
+            </li>
+            <li><a href="#business-rules">4. Business Rules Engine</a></li>
+            <li><a href="#multi-region">5. Multi-Region Support</a></li>
+            <li><a href="#segmentation">6. Customer Segmentation</a></li>
+            <li><a href="#error-handling">7. Error Handling</a>
+                <ul>
+                    <li><a href="#error-framework">7.1 Error Handling Framework</a></li>
+                    <li><a href="#centralised-hub">7.2 Centralised Error Hub</a></li>
+                    <li><a href="#implementation-strategy">7.3 Implementation Strategy</a></li>
+                </ul>
+            </li>
+            <li><a href="#extension-points">8. Extension Points</a></li>
+            <li><a href="#best-practices">9. Best Practices</a></li>
+            <li><a href="#references">10. References</a></li>
         </ul>
     </div>
 
-    <div class="section" id="architecture-overview">
-        <h2>Architecture Overview</h2>
+    <div class="section" id="overview">
+        <h2>1. Overview</h2>
         <p>
-            The FinApp DSL architecture consists of several key components that work together to enable the creation, validation, and execution of financial business logic across multiple platforms. This guide explains the relationship between these components, with a focus on how they interact to create iOS implementations.
+            The FinApp DSL (Domain-Specific Language) provides a declarative way to express financial business rules, 
+            calculations, and customer journeys. It follows a clear separation between the WHAT (business requirements) 
+            and the HOW (implementation details), allowing business analysts and developers to work together efficiently.
         </p>
         <p>
-            At a high level, the architecture consists of:
+            This architecture is designed to address key challenges in financial applications:
         </p>
         <ul>
-            <li><strong>.finapp files</strong> - Declarative specifications of business requirements</li>
-            <li><strong>Clojure implementation</strong> - Runtime behavior and execution logic</li>
-            <li><strong>Code generators</strong> - Tools to transform DSL into platform-specific code</li>
-            <li><strong>Bridge layers</strong> - Interfaces between different parts of the system</li>
-            <li><strong>Platform-specific implementations</strong> - Generated code for iOS, Android, etc.</li>
+            <li>Supporting multiple regions with distinct regulatory requirements</li>
+            <li>Implementing different business rules for various customer segments</li>
+            <li>Maintaining consistency across complex financial calculations</li>
+            <li>Providing clear audit trails for business decisions</li>
+            <li>Enabling rapid adaptation to changing business requirements</li>
         </ul>
-        <div class="note">
+    </div>
+
+    <div class="section" id="core-components">
+        <h2>2. Core Components</h2>
+        
+        <div id="dsl-file">
+            <h3>2.1 .finapp DSL File</h3>
             <p>
-                <strong>Key Architecture Principle:</strong> The .finapp files define WHAT needs to be done, while the Clojure implementation defines HOW it should be done.
+                The <code>.finapp</code> file is the primary interface for defining business requirements. It uses a 
+                domain-specific syntax that is readable by business analysts and serves as the source of truth for 
+                the application's business logic.
+            </p>
+            <pre><code>// Example .finapp file structure
+app LoanTopUp {
+  regions: [UK, US, AU]
+  
+  model Loan {
+    amount: Money
+    term: Int
+    interestRate: Decimal
+    
+    validation LoanEligibility {
+      rule: min_credit_score > 700
+    }
+  }
+  
+  segment PremiumCustomer {
+    criteria: customer.tier == "premium"
+    rules: {
+      max_loan_amount: 50000
+    }
+  }
+  
+  screen LoanApplicationScreen {
+    components: [
+      LoanAmountEntry,
+      TermSelector,
+      SubmitButton
+    ]
+    
+    navigation: {
+      next: ConfirmationScreen
+      back: DashboardScreen
+    }
+  }
+}</code></pre>
+        </div>
+        
+        <div id="implementation">
+            <h3>2.2 Clojure Implementation</h3>
+            <p>
+                The Clojure implementation files translate the declarative DSL into executable code. These files 
+                define the "how" of the business requirements, implementing the actual business logic while 
+                maintaining alignment with the DSL specifications.
+            </p>
+            <pre><code>;; Example Clojure Implementation
+(ns loan-topup
+  (:require [finapp-dsl.core :as dsl]))
+
+(def eligibility-rule
+  (dsl/make-lambda ["customer"]
+    (dsl/make-application >= 
+      [(dsl/make-application :credit_score [customer-var]) 700])))
+
+(def max-loan-amount
+  (dsl/make-lambda ["customer"]
+    (dsl/make-if
+      (dsl/make-application = [(dsl/make-application :tier [customer-var]) "premium"])
+      (dsl/make-quoted 50000)
+      (dsl/make-quoted 25000))))</code></pre>
+        </div>
+        
+        <div id="runtime">
+            <h3>2.3 Evaluation Runtime</h3>
+            <p>
+                The evaluation runtime interprets and executes the business rules defined in the DSL. It provides:
+            </p>
+            <ul>
+                <li>Expression evaluation in the context of specific environments</li>
+                <li>Variable binding and resolution</li>
+                <li>Function application and composition</li>
+                <li>Region and segment-specific rule resolution</li>
+            </ul>
+            <pre><code>;; Runtime evaluation example
+(require '[finapp-dsl.core :as dsl])
+
+(def customer {:id "C123", :credit_score 750, :tier "premium"})
+
+(def environment (dsl/make-environment {"customer" customer}))
+
+(dsl/evaluate eligibility-rule environment)
+;; => true
+
+(dsl/evaluate max-loan-amount environment)
+;; => 50000</code></pre>
+        </div>
+    </div>
+
+    <div class="section" id="separation-of-concerns">
+        <h2>3. Separation of Concerns</h2>
+        
+        <div id="what-layer">
+            <h3>3.1 WHAT Layer (.finapp)</h3>
+            <p>
+                The WHAT layer, represented by <code>.finapp</code> files, focuses on:
+            </p>
+            <ul>
+                <li>Defining business entities and their relationships</li>
+                <li>Specifying validation rules and constraints</li>
+                <li>Declaring customer segments and their criteria</li>
+                <li>Outlining UI components and navigation flows</li>
+                <li>Specifying API endpoints and their behaviors</li>
+            </ul>
+            <p>
+                This layer is designed to be accessible to business analysts and product owners, allowing them to 
+                directly verify that the business requirements are correctly captured.
+            </p>
+        </div>
+        
+        <div id="how-layer">
+            <h3>3.2 HOW Layer (Clojure)</h3>
+            <p>
+                The HOW layer, implemented in Clojure, focuses on:
+            </p>
+            <ul>
+                <li>Implementing the execution logic for business rules</li>
+                <li>Defining the computational aspects of financial calculations</li>
+                <li>Building the evaluation system for expressions</li>
+                <li>Implementing region-specific variations of rules</li>
+                <li>Creating runtime environments for rule evaluation</li>
+            </ul>
+            <p>
+                This layer is primarily the domain of developers, who translate the business requirements into 
+                efficient, maintainable, and testable code.
             </p>
         </div>
     </div>
 
-    <div class="section" id="finapp-files">
-        <h2>The .finapp Files</h2>
+    <div class="section" id="business-rules">
+        <h2>4. Business Rules Engine</h2>
         <p>
-            The .finapp files are written in a custom, declarative syntax that is designed to be readable by both technical and non-technical stakeholders. These files define:
+            The business rules engine is the core of the FinApp DSL, providing a flexible way to encode complex 
+            financial decision logic. Key features include:
         </p>
         <ul>
-            <li>Data models and their properties</li>
-            <li>Validation rules</li>
-            <li>UI screens and components</li>
-            <li>Navigation flows</li>
-            <li>API endpoints</li>
-            <li>Region-specific configurations</li>
-            <li>Customer segment definitions</li>
+            <li><strong>Composability</strong> - Rules can be combined to form more complex rules</li>
+            <li><strong>Reusability</strong> - Rules can be shared across different parts of the application</li>
+            <li><strong>Testability</strong> - Rules can be tested in isolation with specific inputs</li>
+            <li><strong>Versioning</strong> - Rules can be versioned to maintain backward compatibility</li>
+            <li><strong>Auditability</strong> - Rule evaluations can be traced and explained</li>
         </ul>
+        <pre><code>// DSL definition of rules
+rules {
+  rule eligibility {
+    description: "Determine if a customer is eligible for a loan"
+    inputs: [customer, loan_request]
+    condition: customer.credit_score >= 700 && 
+               loan_request.amount <= max_loan_amount(customer)
+  }
+  
+  rule max_loan_amount {
+    description: "Calculate the maximum loan amount for a customer"
+    inputs: [customer]
+    formula: customer.tier == "premium" ? 50000 : 25000
+  }
+}</code></pre>
+    </div>
+
+    <div class="section" id="multi-region">
+        <h2>5. Multi-Region Support</h2>
         <p>
-            Here's an example of a .finapp file snippet:
+            The FinApp DSL architecture provides native support for multi-region applications, allowing:
         </p>
-        <pre><code>// Data model definition
-model Loan {
-    id: string required
-    customerId: string required
-    originalAmount: number required
-    currentBalance: number required
-    monthlyPayment: number required
-    remainingTerm: number required
-    interestRate: number required
-    isEligibleForTopup: boolean required
-}
-
-// Validation rule
-validation LoanEligibility {
-    on: Loan
-    rule: "isEligibleForTopup && status === 'active'"
-    message: "Loan must be active and eligible for top-up"
-}
-
-// API configuration
-api: {
-    baseUrl: "https://api.bankingservices.example/v1"
-    endpoints: [
-        {
-            id: getLoan
-            path: "/loans/{loanId}"
-            method: GET
-            params: [
-                {
-                    name: loanId
-                    type: string
-                    required
-                }
-            ]
-            response: Loan
-        }
-    ]
+        <ul>
+            <li>Definition of region-specific business rules and constraints</li>
+            <li>Localization of UI components and messages</li>
+            <li>Region-specific validation rules and calculations</li>
+            <li>Different workflows based on regional regulatory requirements</li>
+        </ul>
+        <pre><code>// Multi-region definition in DSL
+regions {
+  region UK {
+    currency: GBP
+    dateFormat: "DD/MM/YYYY"
+    rules: {
+      max_loan_term: 60
+      min_loan_amount: 1000
+    }
+  }
+  
+  region US {
+    currency: USD
+    dateFormat: "MM/DD/YYYY"
+    rules: {
+      max_loan_term: 72
+      min_loan_amount: 1500
+    }
+  }
 }</code></pre>
         <p>
-            The .finapp files serve as the source of truth for business requirements, providing a high-level view of what the application should do without specifying implementation details.
+            At runtime, the appropriate region context is applied to ensure that all business rules and calculations 
+            adhere to the specific requirements of the region.
         </p>
     </div>
 
-    <div class="section" id="clojure-implementation">
-        <h2>The Clojure Implementation</h2>
+    <div class="section" id="segmentation">
+        <h2>6. Customer Segmentation</h2>
         <p>
-            While .finapp files specify WHAT to do, the Clojure implementation defines HOW to do it. The Clojure code provides:
+            Customer segmentation allows for tailored experiences and rules based on customer attributes:
         </p>
         <ul>
-            <li>Runtime behavior for business rules</li>
-            <li>Actual algorithms and calculations</li>
-            <li>Integration with external systems</li>
-            <li>Data transformation logic</li>
-            <li>Implementation of core DSL functions</li>
+            <li>Defining segment criteria based on customer attributes</li>
+            <li>Applying segment-specific business rules</li>
+            <li>Customizing UI and workflows per segment</li>
+            <li>Combining segmentation with regional variations</li>
         </ul>
-        <p>
-            Here's an example of a Clojure implementation that corresponds to the .finapp validation rule:
-        </p>
-        <pre><code>;; Clojure implementation of loan eligibility check
-(defn check-loan-eligibility
-  "Implement the loan eligibility rule with additional validation logic"
-  [loan region-code]
-  (and
-    ;; Basic check from .finapp rule
-    (:isEligibleForTopup loan)
-    (= "active" (:status loan))
-    
-    ;; Additional runtime logic
-    (when-let [remaining-term (:remainingTerm loan)]
-      (>= remaining-term (get-min-remaining-term region-code)))
-    
-    (not (:isFraudSuspected loan))
-    
-    ;; Region-specific rules
-    (case region-code
-      "UK" (>= (:accountAgeMonths loan) 6)
-      "HK" (>= (:accountAgeMonths loan) 3)
-      true))) ;; Default case for other regions</code></pre>
-        <p>
-            The Clojure implementation is richer and more detailed than the .finapp specification, as it needs to handle all the complexities of actual execution, including edge cases, error handling, and integration with other systems.
-        </p>
-    </div>
-
-    <div class="section" id="code-generation">
-        <h2>Code Generation Process</h2>
-        <p>
-            The code generation process combines the .finapp files and Clojure implementation to produce platform-specific code. The process follows these steps:
-        </p>
-        <ol>
-            <li><strong>Parsing</strong>: The .finapp file is parsed into an Abstract Syntax Tree (AST)</li>
-            <li><strong>Analysis</strong>: The AST is analyzed for completeness and correctness</li>
-            <li><strong>Transformation</strong>: The AST is transformed into platform-specific code models</li>
-            <li><strong>Generation</strong>: Code files are generated for each target platform</li>
-        </ol>
-        <p>
-            The code generator uses both the .finapp specification and the Clojure implementation to ensure that the generated code correctly implements the business requirements. For example:
-        </p>
-        <ul>
-            <li>Data models from the .finapp file become native data classes</li>
-            <li>Validation rules become validation functions</li>
-            <li>Business logic from Clojure becomes native methods</li>
-            <li>UI screens become platform-specific components</li>
-        </ul>
-    </div>
-
-    <div class="section" id="ios-implementation">
-        <h2>iOS Journey Implementation</h2>
-        <p>
-            For iOS implementations, the code generator produces Swift code that can be compiled directly into an iOS app. The journey from .finapp and Clojure to a native iOS implementation involves these steps:
-        </p>
-        <ol>
-            <li>The .finapp file provides the structure of screens, models, and navigation</li>
-            <li>The Clojure implementation provides the behavior and business logic</li>
-            <li>The code generator translates both into Swift code</li>
-            <li>The Swift code is compiled into the iOS app</li>
-        </ol>
-        <p>
-            The generated iOS code is fully native, with no runtime dependencies on the DSL or Clojure. This means that in production:
-        </p>
-        <ul>
-            <li>No bridge layer is used at runtime</li>
-            <li>No interpretation happens at runtime</li>
-            <li>All business rules are compiled directly into Swift</li>
-            <li>The app has native performance characteristics</li>
-        </ul>
-        <p>
-            Here's an example of a generated Swift screen from a .finapp specification:
-        </p>
-        <pre><code>// Generated from screen TopupAmountSelection in loan-topup.finapp
-class TopupAmountSelectionViewController: UIViewController {
-    // Properties for screen parameters
-    var loanId: String
-    var offerId: String
-    
-    // Data formatting functions
-    func formatCurrency(value: Double, region: String) -> String {
-        return region == "UK" ? "£\(String(format: "%.2f", value))" : "HK$\(String(format: "%.2f", value))"
+        <pre><code>// Customer segmentation in DSL
+segments {
+  segment Premium {
+    criteria: customer.tier == "premium" && customer.tenure >= 2
+    rules: {
+      interest_rate_discount: 0.5
+      expedited_processing: true
     }
-    
-    func getPresetAmounts(minAmount: Double, maxAmount: Double, segment: String) -> [Double] {
-        let spread = maxAmount - minAmount
-        let step = spread / 4
-        return [
-            round(minAmount + step),
-            round(minAmount + step * 2),
-            round(minAmount + step * 3)
-        ]
+  }
+  
+  segment New {
+    criteria: customer.tenure < 1
+    rules: {
+      max_loan_amount: 10000
+      additional_verification: true
     }
-    
-    // Lifecycle methods and UI components
-    // ...
+  }
 }</code></pre>
         <p>
-            The bridge layer is only used during development and testing, not in the production app. This allows for rapid iteration during development while ensuring high performance in production.
+            The segmentation system allows for dynamic determination of a customer's segments 
+            at runtime, enabling personalized experiences without modifying the core business logic.
         </p>
     </div>
 
-    <div class="section" id="api-integration">
-        <h2>API Integration</h2>
-        <p>
-            API integration is a key aspect of financial applications. In the FinApp DSL architecture, API integration follows the same pattern of separation between specification and implementation:
-        </p>
-        <div class="code-comparison">
-            <div>
-                <h4>.finapp API Specification</h4>
-                <pre><code>// API configuration
-api: {
-    baseUrl: "https://api.bankingservices.example/v1"
-    endpoints: [
-        {
-            id: getLoan
-            path: "/loans/{loanId}"
-            method: GET
-            params: [
-                {
-                    name: loanId
-                    type: string
-                    required
-                }
-            ]
-            response: Loan
-        }
-    ]
-}</code></pre>
-            </div>
-            <div>
-                <h4>Clojure API Implementation</h4>
-                <pre><code>;; Actual implementation of API client
-(defn get-loan 
-  "Retrieve loan data from the API"
-  [loan-id region-code auth-token]
-  (let [base-url (get-region-api-url region-code)
-        headers {"Authorization" (str "Bearer " auth-token)
-                 "Content-Type" "application/json"
-                 "Accept-Language" (get-region-locale region-code)}
-        response (http/get (str base-url "/loans/" loan-id)
-                          {:headers headers
-                           :as :json})]
-    (if (= 200 (:status response))
-      (:body response)
-      (throw (ex-info "Failed to fetch loan data" 
-                    {:status (:status response)
-                     :error (:body response)})))))</code></pre>
-            </div>
-        </div>
-        <p>
-            The code generator uses both the API specification from the .finapp file and the implementation details from the Clojure code to create platform-specific API clients:
-        </p>
-        <pre><code>// Generated iOS API Client
-class LoanAPIClient {
-    let baseURL: String
-    let authToken: String
-    
-    init(baseURL: String, authToken: String) {
-        self.baseURL = baseURL
-        self.authToken = authToken
-    }
-    
-    func getLoan(loanId: String) async throws -> Loan {
-        let url = URL(string: "\(baseURL)/loans/\(loanId)")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.addValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+    <div class="section" id="error-handling">
+        <h2>7. Error Handling</h2>
         
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
-            throw APIError.requestFailed
-        }
-        
-        return try JSONDecoder().decode(Loan.self, from: data)
-    }
-}</code></pre>
-        <p>
-            This approach ensures that:
-        </p>
-        <ul>
-            <li>API specifications are clear and maintainable in the .finapp file</li>
-            <li>Implementation details like error handling are in the Clojure code</li>
-            <li>Generated API clients are optimized for each platform</li>
-            <li>Changes to APIs can be made in one place and propagated everywhere</li>
-        </ul>
-    </div>
-
-    <div class="section" id="bridges">
-        <h2>Bridge Layers</h2>
-        <p>
-            Bridge layers facilitate communication between different parts of the system during development and testing, but are not used in production. The main bridge is the ClojureDSLBridge, which allows JavaScript code to interact with the Clojure implementation.
-        </p>
-        <p>
-            The bridge layer serves these purposes:
-        </p>
-        <ul>
-            <li>Enables interactive development and testing</li>
-            <li>Provides a consistent interface across platforms</li>
-            <li>Allows testing of business rules before code generation</li>
-            <li>Simplifies integration with testing frameworks</li>
-        </ul>
-        <p>
-            In development and testing, the bridge layer is used to:
-        </p>
-        <pre><code>// In JavaScript test code
-const ClojureDSL = require('../../support/bridges/clojure-dsl-bridge');
-const FunctionalDSL = ClojureDSL.loadDSL();
-
-// Initialize DSL environment
-let dslEnvironment = FunctionalDSL.createGlobalEnvironment();
-
-// Test a business rule
-const ruleResult = FunctionalDSL.evaluate(
-  FunctionalDSL.makeApplication(
-    FunctionalDSL.makeVariable('isEligibleForTopup'),
-    [customerData, "UK"]
-  ),
-  dslEnvironment
-);</code></pre>
-        <p>
-            However, in production iOS apps, there is no bridge layer - all the business rules are compiled directly into Swift code during the code generation process.
-        </p>
-    </div>
-
-    <div class="section" id="workflow">
-        <h2>Complete Workflow</h2>
-        <p>
-            The complete workflow for developing and deploying a financial application using the FinApp DSL involves these steps:
-        </p>
-        <ol>
-            <li><strong>Domain Modeling</strong>: Define models, rules, and screens in .finapp files</li>
-            <li><strong>Implementation</strong>: Create the Clojure implementation of business logic</li>
-            <li><strong>Testing</strong>: Use the bridge layer to test business rules</li>
-            <li><strong>Code Generation</strong>: Generate platform-specific code</li>
-            <li><strong>Compilation</strong>: Compile the generated code into platform-specific apps</li>
-            <li><strong>Deployment</strong>: Deploy the apps to production</li>
-        </ol>
-        <p>
-            This workflow allows for:
-        </p>
-        <ul>
-            <li>Clear separation between business requirements and implementation</li>
-            <li>Consistent behavior across platforms</li>
-            <li>Rapid iteration of business rules</li>
-            <li>High performance in production</li>
-            <li>Maintainability of complex financial logic</li>
-        </ul>
-        <div class="note">
+        <div id="error-framework">
+            <h3>7.1 Error Handling Framework</h3>
             <p>
-                <strong>Key Benefit:</strong> By separating WHAT (in .finapp files) from HOW (in Clojure implementation), the FinApp DSL architecture makes it easier to manage complex financial applications across multiple platforms and regions.
+                The FinApp DSL includes a robust error handling framework that provides:
+            </p>
+            <ul>
+                <li>Explicit error definition and categorization</li>
+                <li>Clear ownership boundaries between journey and platform</li>
+                <li>Declarative specification of error handling behaviors</li>
+                <li>Consistent user experience across error scenarios</li>
+                <li>Centralized management of error flows</li>
+            </ul>
+            <p>
+                This framework addresses the gap between the <code>.finapp</code> (WHAT) and Clojure implementation (HOW) 
+                files by making error handling explicit and declarative.
+            </p>
+            <pre><code>// Error definition in DSL
+errors {
+  category NetworkError {
+    codes: [408, 502, 503, 504]
+    severity: high
+    retryable: true
+  }
+  
+  error InsufficientFunds extends ValidationError {
+    code: "PAYMENT_001"
+    message: "Insufficient funds available"
+  }
+}</code></pre>
+        </div>
+        
+        <div id="centralised-hub">
+            <h3>7.2 Centralised Error Hub</h3>
+            <p>
+                Each journey contains a centralised error hub that clearly defines:
+            </p>
+            <ol>
+                <li>Which errors the journey owns vs delegates to the platform</li>
+                <li>How owned errors should be handled</li>
+                <li>Recovery strategies for different error scenarios</li>
+            </ol>
+            <pre><code>// Centralised Error Hub in DSL
+journey PaymentJourney {
+  // Journey definition
+  // ...
+  
+  errorHub {
+    // Define which errors this journey owns vs delegates to platform
+    ownership {
+      owns: [InsufficientFunds, PaymentLimitExceeded]
+      delegates: [NetworkError, AuthenticationError]
+    }
+    
+    // Define handlers for owned errors
+    handlers {
+      InsufficientFunds: {
+        display: ErrorBanner
+        location: "PaymentScreen"
+        properties: {
+          message: error.message
+          actionText: "Check balance"
+          action: navigate(AccountDetailsScreen)
+        }
+        recovery: {
+          allowRetry: true
+          alternativeFlow: navigate(AccountListScreen)
+        }
+      }
+    }
+  }
+}</code></pre>
+            <p>
+                The platform also defines default handlers for delegated errors, ensuring that all error scenarios 
+                have appropriate handling strategies.
             </p>
         </div>
+        
+        <div id="implementation-strategy">
+            <h3>7.3 Implementation Strategy</h3>
+            <p>
+                The error handling implementation follows these key principles:
+            </p>
+            <ul>
+                <li><strong>Separation of Concerns</strong> - Error definition is separate from handling logic</li>
+                <li><strong>Explicit Ownership</strong> - Clear boundaries between journey and platform responsibilities</li>
+                <li><strong>Consistency</strong> - Standardized error patterns across the application</li>
+                <li><strong>Recoverability</strong> - Well-defined recovery strategies for different error types</li>
+                <li><strong>User Experience</strong> - Error presentation tailored to the context and severity</li>
+            </ul>
+            <p>
+                This approach significantly improves the maintainability and consistency of error handling throughout 
+                the application, while providing a better user experience during error scenarios.
+            </p>
+            <div class="note">
+                <p>
+                    <strong>Note:</strong> For a detailed explanation of the error handling framework, 
+                    refer to the <a href="../rfc/error-handling.html">Error Handling RFC</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="section" id="extension-points">
+        <h2>8. Extension Points</h2>
+        <p>
+            The FinApp DSL architecture provides several extension points for customizing and enhancing the system:
+        </p>
+        <ul>
+            <li><strong>Custom Functions</strong> - Adding new functions to the expression language</li>
+            <li><strong>Rule Transforms</strong> - Preprocessing rules for optimization or analysis</li>
+            <li><strong>Middleware</strong> - Intercepting and modifying rule evaluation</li>
+            <li><strong>Event Hooks</strong> - Reacting to specific events in the evaluation process</li>
+            <li><strong>Custom Components</strong> - Extending the UI component library</li>
+        </ul>
+        <pre><code>;; Example of extending with custom functions
+(defn register-custom-functions [registry]
+  (-> registry
+      (assoc "calculate-interest" 
+         (fn [principal rate term]
+           (* principal rate (/ term 12))))
+      (assoc "apply-early-repayment" 
+         (fn [loan-amount term months-elapsed]
+           ;; implementation
+           ))
+      ;; Add more custom functions as needed
+      ))</code></pre>
+    </div>
+
+    <div class="section" id="best-practices">
+        <h2>9. Best Practices</h2>
+        <p>
+            When working with the FinApp DSL architecture, consider these best practices:
+        </p>
+        <ul>
+            <li><strong>Keep DSL files focused</strong> - Each .finapp file should represent a coherent domain concept</li>
+            <li><strong>Maintain alignment</strong> - Ensure the Clojure implementation matches the DSL declarations</li>
+            <li><strong>Write tests for rules</strong> - Validate rule behavior with comprehensive test cases</li>
+            <li><strong>Document business intent</strong> - Add descriptions to rules explaining their business purpose</li>
+            <li><strong>Reuse common patterns</strong> - Extract shared logic into reusable rules and functions</li>
+            <li><strong>Version critical rules</strong> - Use versioning for rules that might change over time</li>
+            <li><strong>Plan for regional variations</strong> - Design rules with multi-region support in mind</li>
+            <li><strong>Handle errors explicitly</strong> - Define error scenarios and their handling in the DSL</li>
+        </ul>
+        <div class="warning">
+            <p>
+                <strong>Warning:</strong> Avoid embedding complex business logic directly in the Clojure implementation 
+                without corresponding DSL declarations. This creates a disconnect between the business requirements and 
+                implementation.
+            </p>
+        </div>
+    </div>
+
+    <div class="section" id="references">
+        <h2>10. References</h2>
+        <ul>
+            <li><a href="../api/index.html">API Reference</a> - Complete API documentation for the FinApp DSL</li>
+            <li><a href="../concepts/index.html">Core Concepts</a> - Detailed explanations of the DSL's core concepts</li>
+            <li><a href="../examples/loan-topup.html">Loan Top-up Example</a> - A complete example implementation</li>
+            <li><a href="../rfc/error-handling.html">Error Handling RFC</a> - Detailed error handling framework specification</li>
+            <li><a href="getting-started.html">Getting Started Guide</a> - Guide for new users of the FinApp DSL</li>
+        </ul>
     </div>
 
     <footer>
-        <p>FinApp DSL Documentation &copy; 2023 AppAthanor</p>
+        <p>
+            &copy; 2023 FinApp DSL Team. All rights reserved.
+        </p>
     </footer>
 </body>
 </html> 
