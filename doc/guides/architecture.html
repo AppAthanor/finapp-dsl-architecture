@@ -129,20 +129,28 @@
                     <li><a href="#how-layer">3.2 HOW Layer (Clojure)</a></li>
                 </ul>
             </li>
-            <li><a href="#business-rules">4. Business Rules Engine</a></li>
-            <li><a href="#api-architecture">5. API Architecture</a></li>
-            <li><a href="#multi-region">6. Multi-Region Support</a></li>
-            <li><a href="#segmentation">7. Customer Segmentation</a></li>
-            <li><a href="#error-handling">8. Error Handling</a>
+            <li><a href="#bdd-features">4. BDD Feature Files</a>
                 <ul>
-                    <li><a href="#error-framework">8.1 Error Handling Framework</a></li>
-                    <li><a href="#centralised-hub">8.2 Centralised Error Hub</a></li>
-                    <li><a href="#implementation-strategy">8.3 Implementation Strategy</a></li>
+                    <li><a href="#feature-role">4.1 Role of Feature Files</a></li>
+                    <li><a href="#feature-structure">4.2 Feature File Structure</a></li>
+                    <li><a href="#feature-integration">4.3 Integration with DSL Architecture</a></li>
+                    <li><a href="#feature-testing">4.4 Multi-Region and Segmentation Testing</a></li>
                 </ul>
             </li>
-            <li><a href="#extension-points">9. Extension Points</a></li>
-            <li><a href="#best-practices">10. Best Practices</a></li>
-            <li><a href="#references">11. References</a></li>
+            <li><a href="#business-rules">5. Business Rules Engine</a></li>
+            <li><a href="#api-architecture">6. API Architecture</a></li>
+            <li><a href="#multi-region">7. Multi-Region Support</a></li>
+            <li><a href="#segmentation">8. Customer Segmentation</a></li>
+            <li><a href="#error-handling">9. Error Handling</a>
+                <ul>
+                    <li><a href="#error-framework">9.1 Error Handling Framework</a></li>
+                    <li><a href="#centralised-hub">9.2 Centralised Error Hub</a></li>
+                    <li><a href="#implementation-strategy">9.3 Implementation Strategy</a></li>
+                </ul>
+            </li>
+            <li><a href="#extension-points">10. Extension Points</a></li>
+            <li><a href="#best-practices">11. Best Practices</a></li>
+            <li><a href="#references">12. References</a></li>
         </ul>
     </div>
 
@@ -301,8 +309,124 @@ app LoanTopUp {
         </div>
     </div>
 
+    <div class="section" id="bdd-features">
+        <h2>4. BDD Feature Files</h2>
+        <p>
+            The FinApp DSL architecture includes Behavior-Driven Development (BDD) feature files as a third layer 
+            of the architecture, complementing the .finapp DSL files and Clojure implementation.
+        </p>
+        
+        <div id="feature-role">
+            <h3>4.1 Role of Feature Files</h3>
+            <p>
+                BDD feature files written in Gherkin serve several key purposes:
+            </p>
+            <ul>
+                <li><strong>Business Requirements</strong> - Capturing business requirements in a human-readable format</li>
+                <li><strong>Acceptance Criteria</strong> - Defining clear acceptance criteria for features</li>
+                <li><strong>Test Documentation</strong> - Providing living documentation that evolves with the code</li>
+                <li><strong>Cross-team Communication</strong> - Facilitating communication between business, development, and QA</li>
+            </ul>
+        </div>
+        
+        <div id="feature-structure">
+            <h3>4.2 Feature File Structure</h3>
+            <p>
+                Feature files use the Gherkin syntax with the following components:
+            </p>
+            <ul>
+                <li><strong>Feature</strong> - The high-level feature being described</li>
+                <li><strong>Background</strong> - Common setup steps for all scenarios</li>
+                <li><strong>Scenario</strong> - A specific test case or user journey</li>
+                <li><strong>Given/When/Then</strong> - The context, action, and expected outcome</li>
+                <li><strong>Examples</strong> - Data tables for scenario outlines</li>
+            </ul>
+            
+            <pre><code>Feature: Loan Top-up for Pre-approved Customers
+  As a pre-approved loan customer
+  I want to borrow additional funds on my existing loan
+  So that I can meet my financial needs without applying for a new loan
+
+  Background:
+    Given I am authenticated in the mobile banking app
+    And I have an existing loan that is eligible for top-up
+    And I have been pre-approved for a loan top-up
+    And my current region is set to "&lt;region&gt;"
+    And my customer segment is "&lt;segment&gt;"
+    And the current date and time is "&lt;datetime&gt;"
+
+  Examples:
+    | region | segment | datetime               | description                      |
+    | UK     | Basic   | 2025-03-15T14:30:00Z   | UK Basic customer, standard hours |
+    | UK     | Wealth  | 2025-03-15T14:30:00Z   | UK Wealth customer, standard hours |
+    | HK     | Basic   | 2025-03-15T10:30:00+08 | HK Basic customer, standard hours |
+    | HK     | Wealth  | 2025-03-15T10:30:00+08 | HK Wealth customer, standard hours |</code></pre>
+        </div>
+        
+        <div id="feature-integration">
+            <h3>4.3 Integration with DSL Architecture</h3>
+            <p>
+                The integration of feature files with the DSL architecture follows these principles:
+            </p>
+            <ul>
+                <li><strong>Top-down Design</strong> - Features drive the domain model in the .finapp files</li>
+                <li><strong>Traceability</strong> - Clear mapping between feature scenarios and DSL components</li>
+                <li><strong>Automated Testing</strong> - Step definitions implement the automated tests</li>
+                <li><strong>Reuse of DSL Functions</strong> - Step implementations use the DSL evaluation runtime</li>
+            </ul>
+            
+            <pre><code>;; Example step definition using the DSL
+(Then "I should see a localised pre-approved message in the appropriate language" 
+  (fn []
+    (let [visible-message (loans-overview-page/get-topup-offer-message)
+          
+          ;; Evaluate the expected message using the DSL
+          screen-content (dsl/evaluate
+                           (get-in loan-topup-journey [:initialOfferScreen])
+                           dsl-environment)]
+      
+      ;; Verify using the DSL-generated content
+      (is (string/includes? 
+            visible-message 
+            (get-in screen-content [:localizedText :pre_approved_message]))))))</code></pre>
+        </div>
+        
+        <div id="feature-testing">
+            <h3>4.4 Multi-Region and Segmentation Testing</h3>
+            <p>
+                Feature files provide a powerful way to test region-specific and segment-specific behaviors:
+            </p>
+            <pre><code>Scenario Outline: Region-specific offer presentation
+  Given my current region is set to "&lt;region&gt;"
+  When I navigate to the "My Loans" section
+  Then I should see all monetary values in "&lt;currency&gt;" format
+  And I should see dates in "&lt;date_format&gt;" format
+  And I should see the terms and conditions specific to "&lt;region&gt;" regulations
+  
+  Examples:
+    | region | currency | date_format      | 
+    | UK     | GBP (£)  | DD/MM/YYYY       | 
+    | HK     | HKD ($)  | DD/MM/YYYY       |</code></pre>
+            
+            <pre><code>Scenario Outline: Customer segment determines interest rates and limits
+  Given my current region is set to "&lt;region&gt;"
+  And my customer segment is "&lt;segment&gt;"
+  When I navigate to the "My Loans" section
+  And I select "View Your Offer"
+  Then I should see interest rate of "&lt;interest_rate&gt;"
+  And I should see a maximum top-up amount of up to "&lt;max_amount&gt;"
+  
+  Examples:
+    | region | segment | interest_rate | max_amount |
+    | UK     | Basic   | 6.9% APR      | £25,000    |
+    | UK     | Wealth  | 5.4% APR      | £100,000   |
+    | HK     | Basic   | 7.2% APR      | HK$200,000 |
+    | HK     | Wealth  | 5.8% APR      | HK$800,000 |</code></pre>
+        </div>
+    </div>
+
     <div class="section" id="business-rules">
-        <h2>4. Business Rules Engine</h2>
+        <h2>5. Business Rules Engine</h2>
         <p>
             The business rules engine is the core of the FinApp DSL, providing a flexible way to encode complex 
             financial decision logic. The engine itself is implemented in Clojure, which serves as the "HOW" layer
@@ -361,12 +485,12 @@ rules {
     </div>
 
     <div class="section" id="api-architecture">
-        <h2>5. API Architecture</h2>
+        <h2>6. API Architecture</h2>
         <p>
             The FinApp DSL includes a comprehensive API framework for defining and consuming APIs:
         </p>
         
-        <h3>5.1 API Definition</h3>
+        <h3>6.1 API Definition</h3>
         <p>
             APIs are defined declaratively in the .finapp DSL file, including endpoints, request/response structures, 
             and error mappings:
@@ -425,7 +549,7 @@ api LoanTopupService {
   }
 }</code></pre>
 
-        <h3>5.2 API Configuration</h3>
+        <h3>6.2 API Configuration</h3>
         <p>
             API configurations include base URLs, authentication methods, and endpoint mappings:
         </p>
@@ -454,7 +578,7 @@ api: {
   ]
 }</code></pre>
 
-        <h3>5.3 API Integration</h3>
+        <h3>6.3 API Integration</h3>
         <p>
             APIs can be invoked from various parts of the application:
         </p>
@@ -480,7 +604,7 @@ screen LoansOverview {
   ]
 }</code></pre>
 
-        <h3>5.4 API Error Handling</h3>
+        <h3>6.4 API Error Handling</h3>
         <p>
             The API architecture integrates tightly with the error handling framework:
         </p>
@@ -517,7 +641,7 @@ screen LoansOverview {
     </div>
 
     <div class="section" id="multi-region">
-        <h2>6. Multi-Region Support</h2>
+        <h2>7. Multi-Region Support</h2>
         <p>
             The FinApp DSL architecture provides native support for multi-region applications, allowing:
         </p>
@@ -554,7 +678,7 @@ regions {
     </div>
 
     <div class="section" id="segmentation">
-        <h2>7. Customer Segmentation</h2>
+        <h2>8. Customer Segmentation</h2>
         <p>
             Customer segmentation allows for tailored experiences and rules based on customer attributes:
         </p>
@@ -589,10 +713,10 @@ segments {
     </div>
 
     <div class="section" id="error-handling">
-        <h2>8. Error Handling</h2>
+        <h2>9. Error Handling</h2>
         
         <div id="error-framework">
-            <h3>8.1 Error Handling Framework</h3>
+            <h3>9.1 Error Handling Framework</h3>
             <p>
                 The FinApp DSL includes a robust error handling framework that provides:
             </p>
@@ -623,7 +747,7 @@ errors {
         </div>
         
         <div id="centralised-hub">
-            <h3>8.2 Centralised Error Hub</h3>
+            <h3>9.2 Centralised Error Hub</h3>
             <p>
                 Each journey contains a centralised error hub that clearly defines:
             </p>
@@ -669,7 +793,7 @@ journey PaymentJourney {
         </div>
         
         <div id="implementation-strategy">
-            <h3>8.3 Implementation Strategy</h3>
+            <h3>9.3 Implementation Strategy</h3>
             <p>
                 The error handling implementation follows these key principles:
             </p>
@@ -694,7 +818,7 @@ journey PaymentJourney {
     </div>
 
     <div class="section" id="extension-points">
-        <h2>9. Extension Points</h2>
+        <h2>10. Extension Points</h2>
         <p>
             The FinApp DSL architecture provides several extension points for customizing and enhancing the system:
         </p>
@@ -720,7 +844,7 @@ journey PaymentJourney {
     </div>
 
     <div class="section" id="best-practices">
-        <h2>10. Best Practices</h2>
+        <h2>11. Best Practices</h2>
         <p>
             When working with the FinApp DSL architecture, consider these best practices:
         </p>
@@ -744,13 +868,14 @@ journey PaymentJourney {
     </div>
 
     <div class="section" id="references">
-        <h2>11. References</h2>
+        <h2>12. References</h2>
         <ul>
             <li><a href="../api/index.html">API Reference</a> - Complete API documentation for the FinApp DSL</li>
             <li><a href="../concepts/index.html">Core Concepts</a> - Detailed explanations of the DSL's core concepts</li>
             <li><a href="../examples/loan-topup.html">Loan Top-up Example</a> - A complete example implementation</li>
             <li><a href="../rfc/error-handling.html">Error Handling RFC</a> - Detailed error handling framework specification</li>
             <li><a href="getting-started.html">Getting Started Guide</a> - Guide for new users of the FinApp DSL</li>
+            <li><a href="../../specifications/features/domains/lending/loan-topup.feature">Loan Top-up Feature File</a> - BDD specification for the loan top-up feature</li>
         </ul>
     </div>
 
