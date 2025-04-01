@@ -130,18 +130,19 @@
                 </ul>
             </li>
             <li><a href="#business-rules">4. Business Rules Engine</a></li>
-            <li><a href="#multi-region">5. Multi-Region Support</a></li>
-            <li><a href="#segmentation">6. Customer Segmentation</a></li>
-            <li><a href="#error-handling">7. Error Handling</a>
+            <li><a href="#api-architecture">5. API Architecture</a></li>
+            <li><a href="#multi-region">6. Multi-Region Support</a></li>
+            <li><a href="#segmentation">7. Customer Segmentation</a></li>
+            <li><a href="#error-handling">8. Error Handling</a>
                 <ul>
-                    <li><a href="#error-framework">7.1 Error Handling Framework</a></li>
-                    <li><a href="#centralised-hub">7.2 Centralised Error Hub</a></li>
-                    <li><a href="#implementation-strategy">7.3 Implementation Strategy</a></li>
+                    <li><a href="#error-framework">8.1 Error Handling Framework</a></li>
+                    <li><a href="#centralised-hub">8.2 Centralised Error Hub</a></li>
+                    <li><a href="#implementation-strategy">8.3 Implementation Strategy</a></li>
                 </ul>
             </li>
-            <li><a href="#extension-points">8. Extension Points</a></li>
-            <li><a href="#best-practices">9. Best Practices</a></li>
-            <li><a href="#references">10. References</a></li>
+            <li><a href="#extension-points">9. Extension Points</a></li>
+            <li><a href="#best-practices">10. Best Practices</a></li>
+            <li><a href="#references">11. References</a></li>
         </ul>
     </div>
 
@@ -304,7 +305,11 @@ app LoanTopUp {
         <h2>4. Business Rules Engine</h2>
         <p>
             The business rules engine is the core of the FinApp DSL, providing a flexible way to encode complex 
-            financial decision logic. Key features include:
+            financial decision logic. The engine itself is implemented in Clojure, which serves as the "HOW" layer
+            that executes the rules defined in the ".finapp" DSL files (the "WHAT" layer).
+        </p>
+        <p>
+            Key features of the business rules engine include:
         </p>
         <ul>
             <li><strong>Composability</strong> - Rules can be combined to form more complex rules</li>
@@ -313,6 +318,9 @@ app LoanTopUp {
             <li><strong>Versioning</strong> - Rules can be versioned to maintain backward compatibility</li>
             <li><strong>Auditability</strong> - Rule evaluations can be traced and explained</li>
         </ul>
+        <p>
+            Business rules are defined declaratively in the .finapp DSL file:
+        </p>
         <pre><code>// DSL definition of rules
 rules {
   rule eligibility {
@@ -328,10 +336,188 @@ rules {
     formula: customer.tier == "premium" ? 50000 : 25000
   }
 }</code></pre>
+
+        <p>
+            These rules are then implemented in Clojure, which provides the actual execution logic:
+        </p>
+        <pre><code>;; Clojure implementation of the rules
+(defn max-loan-amount 
+  "Calculate the maximum loan amount for a customer"
+  [customer]
+  (if (= (:tier customer) "premium")
+    50000
+    25000))
+
+(defn eligibility-rule
+  "Determine if a customer is eligible for a loan"
+  [customer loan-request]
+  (and (>= (:credit_score customer) 700)
+       (<= (:amount loan-request) (max-loan-amount customer))))</code></pre>
+
+        <p>
+            The Clojure implementation provides the runtime behavior for the rules defined in the DSL, ensuring
+            that business logic is executed consistently according to the specifications.
+        </p>
+    </div>
+
+    <div class="section" id="api-architecture">
+        <h2>5. API Architecture</h2>
+        <p>
+            The FinApp DSL includes a comprehensive API framework for defining and consuming APIs:
+        </p>
+        
+        <h3>5.1 API Definition</h3>
+        <p>
+            APIs are defined declaratively in the .finapp DSL file, including endpoints, request/response structures, 
+            and error mappings:
+        </p>
+        <pre><code>// API definition in DSL
+api LoanTopupService {
+  endpoint: "/api/loan-topup"
+  
+  operation checkEligibility {
+    method: GET
+    request: {
+      loanId: string
+      customerId: string
+    }
+    response: {
+      eligible: boolean
+      maxAmount: number?
+      reason: string?
+    }
+    
+    errorMapping {
+      400: {
+        "LOAN_NOT_ELIGIBLE" -> IneligibleLoan
+        "INCOME_BELOW_THRESHOLD" -> InsufficientIncome
+      }
+      401: AuthenticationError
+      403: AuthorisationError
+      5xx: NetworkError
+    }
+  }
+  
+  operation createTopup {
+    method: POST
+    request: {
+      loanId: string
+      customerId: string
+      amount: number
+      term: number?
+    }
+    response: {
+      topupId: string
+      status: string
+      processingDate: date
+      disbursementDate: date
+    }
+    
+    errorMapping {
+      400: {
+        "AMOUNT_TOO_LOW" -> AmountTooLow
+        "AMOUNT_TOO_HIGH" -> AmountTooHigh
+      }
+      401: AuthenticationError
+      403: AuthorisationError
+      5xx: NetworkError
+    }
+  }
+}</code></pre>
+
+        <h3>5.2 API Configuration</h3>
+        <p>
+            API configurations include base URLs, authentication methods, and endpoint mappings:
+        </p>
+        <pre><code>// API configuration
+api: {
+  baseUrl: "https://api.bankingservices.example/v1"
+  mock: true
+  endpoints: [
+    {
+      id: getLoans
+      path: "/loans"
+      method: GET
+      response: Loan[]
+    },
+    {
+      id: createTopup
+      path: "/loans/topup"
+      method: POST
+      body: {
+        loanId: string required,
+        amount: number required,
+        interestRate: number required
+      }
+      response: TopupConfirmation
+    }
+  ]
+}</code></pre>
+
+        <h3>5.3 API Integration</h3>
+        <p>
+            APIs can be invoked from various parts of the application:
+        </p>
+        <ul>
+            <li><strong>Screen Loading</strong> - API calls triggered when screens load</li>
+            <li><strong>User Actions</strong> - API calls triggered by user interactions</li>
+            <li><strong>Background Processing</strong> - API calls for background tasks</li>
+        </ul>
+        <pre><code>// API integration in screens
+screen LoansOverview {
+  // ...
+  onLoad: {
+    apiCall: getLoans
+  }
+  
+  // ...
+  components: [
+    {
+      type: "button"
+      label: "Confirm Top-up"
+      action: "createTopup" // This will trigger the API call
+    }
+  ]
+}</code></pre>
+
+        <h3>5.4 API Error Handling</h3>
+        <p>
+            The API architecture integrates tightly with the error handling framework:
+        </p>
+        <ul>
+            <li>HTTP status codes are mapped to domain-specific errors</li>
+            <li>Error payloads can include additional context for error handling</li>
+            <li>API errors trigger the appropriate error handlers in the journey</li>
+        </ul>
+        <p>
+            In the Clojure implementation, API error handling is managed through the error mapping functions:
+        </p>
+        <pre><code>;; API Error Mappings
+(def api-error-mappings
+  {:LoanTopupService
+   {:checkEligibility
+    {:400 {"LOAN_NOT_ELIGIBLE" :IneligibleLoan
+           "INCOME_BELOW_THRESHOLD" :InsufficientIncome}
+     :401 :AuthenticationError
+     :403 :AuthorisationError
+     :5xx :NetworkError}}})
+     
+(defn map-api-error
+  "Maps an API error response to a domain error"
+  [service operation status-code error-message]
+  (let [status-mappings (get-in api-error-mappings [service operation])
+        status-key (if (and (>= status-code 500) (< status-code 600))
+                     :5xx
+                     status-code)
+        error-mapping (get status-mappings status-key)]
+    (cond
+      (map? error-mapping) (get error-mapping error-message)
+      (keyword? error-mapping) error-mapping
+      :else :UnknownError)))</code></pre>
     </div>
 
     <div class="section" id="multi-region">
-        <h2>5. Multi-Region Support</h2>
+        <h2>6. Multi-Region Support</h2>
         <p>
             The FinApp DSL architecture provides native support for multi-region applications, allowing:
         </p>
@@ -368,7 +554,7 @@ regions {
     </div>
 
     <div class="section" id="segmentation">
-        <h2>6. Customer Segmentation</h2>
+        <h2>7. Customer Segmentation</h2>
         <p>
             Customer segmentation allows for tailored experiences and rules based on customer attributes:
         </p>
@@ -403,10 +589,10 @@ segments {
     </div>
 
     <div class="section" id="error-handling">
-        <h2>7. Error Handling</h2>
+        <h2>8. Error Handling</h2>
         
         <div id="error-framework">
-            <h3>7.1 Error Handling Framework</h3>
+            <h3>8.1 Error Handling Framework</h3>
             <p>
                 The FinApp DSL includes a robust error handling framework that provides:
             </p>
@@ -437,7 +623,7 @@ errors {
         </div>
         
         <div id="centralised-hub">
-            <h3>7.2 Centralised Error Hub</h3>
+            <h3>8.2 Centralised Error Hub</h3>
             <p>
                 Each journey contains a centralised error hub that clearly defines:
             </p>
@@ -483,7 +669,7 @@ journey PaymentJourney {
         </div>
         
         <div id="implementation-strategy">
-            <h3>7.3 Implementation Strategy</h3>
+            <h3>8.3 Implementation Strategy</h3>
             <p>
                 The error handling implementation follows these key principles:
             </p>
@@ -508,7 +694,7 @@ journey PaymentJourney {
     </div>
 
     <div class="section" id="extension-points">
-        <h2>8. Extension Points</h2>
+        <h2>9. Extension Points</h2>
         <p>
             The FinApp DSL architecture provides several extension points for customizing and enhancing the system:
         </p>
@@ -534,7 +720,7 @@ journey PaymentJourney {
     </div>
 
     <div class="section" id="best-practices">
-        <h2>9. Best Practices</h2>
+        <h2>10. Best Practices</h2>
         <p>
             When working with the FinApp DSL architecture, consider these best practices:
         </p>
@@ -558,7 +744,7 @@ journey PaymentJourney {
     </div>
 
     <div class="section" id="references">
-        <h2>10. References</h2>
+        <h2>11. References</h2>
         <ul>
             <li><a href="../api/index.html">API Reference</a> - Complete API documentation for the FinApp DSL</li>
             <li><a href="../concepts/index.html">Core Concepts</a> - Detailed explanations of the DSL's core concepts</li>
