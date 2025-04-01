@@ -72,6 +72,112 @@ app LoanTopupApp {
     ]
 }
 
+// Error definitions
+errors {
+  // System-defined error categories
+  category NetworkError {
+    codes: [408, 502, 503, 504]
+    severity: high
+    retryable: true
+  }
+  
+  category ValidationError {
+    codes: [400, 422]
+    severity: medium
+    retryable: false
+  }
+  
+  category AuthenticationError {
+    codes: [401]
+    severity: high
+    retryable: false
+  }
+  
+  category AuthorisationError {
+    codes: [403]
+    severity: high
+    retryable: false
+  }
+  
+  // Loan-specific error definitions
+  error IneligibleLoan extends ValidationError {
+    code: "LOAN_001"
+    message: "Your loan is not eligible for a top-up at this time"
+  }
+  
+  error InsufficientIncome extends ValidationError {
+    code: "LOAN_002"
+    message: "Your income does not meet the minimum requirement for this top-up"
+  }
+  
+  error AmountTooLow extends ValidationError {
+    code: "LOAN_003"
+    message: "The requested amount is below the minimum allowed"
+  }
+  
+  error AmountTooHigh extends ValidationError {
+    code: "LOAN_004"
+    message: "The requested amount exceeds your maximum eligible amount"
+  }
+  
+  error LoanOfferExpired extends ValidationError {
+    code: "LOAN_005"
+    message: "Your loan top-up offer has expired"
+  }
+  
+  error AccountTooNew extends ValidationError {
+    code: "LOAN_006"
+    message: "Your account is too new for a loan top-up"
+  }
+}
+
+// Component definitions for error handling
+components {
+  // Error components
+  component ErrorBanner {
+    type: "banner"
+    properties: {
+      message: string
+      actionText: string?
+      action: action?
+      variant: "error" | "warning" = "error"
+    }
+  }
+  
+  component ModalDialog {
+    type: "modal"
+    properties: {
+      title: string
+      message: string
+      primaryAction: string
+      secondaryAction: string?
+      onPrimary: action
+      onSecondary: action?
+    }
+  }
+  
+  component RetryDialog {
+    type: "modal"
+    properties: {
+      title: string
+      message: string
+      retryAction: string
+      cancelAction: string
+      onRetry: action
+      onCancel: action
+    }
+  }
+  
+  component SecurityDialog {
+    type: "modal"
+    properties: {
+      message: string
+      action: string
+      onAction: action
+    }
+  }
+}
+
 // Models for loan top-up feature
 model Loan {
     id: string required
@@ -147,6 +253,213 @@ validation TopupAmount {
     on: TopupAmount
     rule: "amount >= minTopupAmount && amount <= maxTopupAmount"
     message: "Top-up amount must be within the allowed limits"
+}
+
+// API definitions with error mapping
+api LoanTopupService {
+  endpoint: "/api/loan-topup"
+  
+  operation checkEligibility {
+    method: GET
+    request: {
+      loanId: string
+      customerId: string
+    }
+    response: {
+      eligible: boolean
+      maxAmount: number?
+      reason: string?
+    }
+    
+    errorMapping {
+      400: {
+        "LOAN_NOT_ELIGIBLE" -> IneligibleLoan
+        "INCOME_BELOW_THRESHOLD" -> InsufficientIncome
+        "ACCOUNT_TOO_NEW" -> AccountTooNew
+      }
+      401: AuthenticationError
+      403: AuthorisationError
+      5xx: NetworkError
+    }
+  }
+  
+  operation createTopup {
+    method: POST
+    request: {
+      loanId: string
+      customerId: string
+      amount: number
+      term: number?
+    }
+    response: {
+      topupId: string
+      status: string
+      processingDate: date
+      disbursementDate: date
+    }
+    
+    errorMapping {
+      400: {
+        "AMOUNT_TOO_LOW" -> AmountTooLow
+        "AMOUNT_TOO_HIGH" -> AmountTooHigh
+        "LOAN_OFFER_EXPIRED" -> LoanOfferExpired
+      }
+      401: AuthenticationError
+      403: AuthorisationError
+      5xx: NetworkError
+    }
+  }
+}
+
+// Journey definition with error hub
+journey LoanTopupJourney {
+  screens: [
+    LoansOverview,
+    TopupOfferScreen,
+    AmountSelectionScreen,
+    TermsScreen,
+    ConfirmationScreen,
+    SuccessScreen
+  ]
+  
+  initialScreen: LoansOverview
+  
+  // Centralised Error Hub
+  errorHub {
+    // Define which errors this journey owns vs delegates to platform
+    ownership {
+      owns: [IneligibleLoan, InsufficientIncome, AmountTooLow, AmountTooHigh, LoanOfferExpired, AccountTooNew]
+      delegates: [NetworkError, AuthenticationError, AuthorisationError]
+    }
+    
+    // Define handlers for owned errors
+    handlers {
+      IneligibleLoan: {
+        display: ErrorBanner
+        location: "LoansOverview"
+        properties: {
+          message: error.message
+          actionText: "View loan details"
+          action: navigate(LoanDetailsScreen)
+        }
+        recovery: {
+          allowRetry: false
+        }
+      }
+      
+      InsufficientIncome: {
+        display: ModalDialog
+        location: "TopupOfferScreen"
+        properties: {
+          title: "Income requirement not met"
+          message: "Based on our records, your income doesn't meet the minimum requirement for this loan top-up. Please update your income details or try again later."
+          primaryAction: "Update income details"
+          secondaryAction: "Go back"
+        }
+        recovery: {
+          allowRetry: false
+          alternativeFlow: navigate(IncomeUpdateScreen)
+        }
+      }
+      
+      AmountTooLow: {
+        display: ErrorBanner
+        location: "AmountSelectionScreen"
+        properties: {
+          message: error.message
+        }
+        recovery: {
+          allowRetry: true
+          focusField: "amountField"
+        }
+      }
+      
+      AmountTooHigh: {
+        display: ErrorBanner
+        location: "AmountSelectionScreen"
+        properties: {
+          message: error.message
+        }
+        recovery: {
+          allowRetry: true
+          focusField: "amountField"
+        }
+      }
+      
+      LoanOfferExpired: {
+        display: ModalDialog
+        location: "ConfirmationScreen"
+        properties: {
+          title: "Offer expired"
+          message: "Your loan top-up offer has expired. Please start a new application."
+          primaryAction: "Start new application"
+          secondaryAction: "Go to loans overview"
+        }
+        recovery: {
+          primaryFlow: navigate(LoansOverview)
+          secondaryFlow: navigate(LoansOverview)
+        }
+      }
+      
+      AccountTooNew: {
+        display: ErrorBanner
+        location: "TopupOfferScreen"
+        properties: {
+          message: error.message
+        }
+        recovery: {
+          allowRetry: false
+        }
+      }
+    }
+  }
+}
+
+// Platform-level default error handlers
+platform {
+  errorHub {
+    defaultHandlers {
+      NetworkError: {
+        display: RetryDialog
+        properties: {
+          title: "Connection issue"
+          message: "We're having trouble connecting to our services. Please try again."
+          retryAction: "Retry"
+          cancelAction: "Cancel"
+        }
+        recovery: {
+          retryStrategy: exponentialBackoff(3, 1000)
+          cancelFlow: navigateBack()
+        }
+      }
+      
+      AuthenticationError: {
+        display: SecurityDialog
+        properties: {
+          message: "Your session has expired. Please log in again to continue."
+          action: "Log in"
+        }
+        recovery: {
+          preserveState: true
+          flow: navigate(LoginScreen)
+        }
+      }
+      
+      AuthorisationError: {
+        display: ModalDialog
+        properties: {
+          title: "Access denied"
+          message: "You don't have permission to perform this action."
+          primaryAction: "Go to home"
+          secondaryAction: "Go back"
+        }
+        recovery: {
+          primaryFlow: navigate(HomeScreen)
+          secondaryFlow: navigateBack()
+        }
+      }
+    }
+  }
 }
 
 // Screens for loan top-up journey
@@ -310,1245 +623,328 @@ screen LoansOverview {
     }
 }
 
-screen TopupOffer {
+screen TopupOfferScreen {
     title: "Loan Top-up Offer"
     
-    params: {
-        loanId: string required
-    }
-    
-    dataFunctions: [
-        {
-            name: "formatCurrency"
-            params: ["value", "region"]
-            expression: "region === 'UK' ? `£${value.toFixed(2)}` : `HK$${value.toFixed(2)}`"
-        },
-        {
-            name: "formatDate"
-            params: ["dateValue", "region"]
-            expression: "new Intl.DateTimeFormat(region === 'UK' ? 'en-GB' : 'en-HK', { dateStyle: 'medium' }).format(new Date(dateValue))"
-        },
-        {
-            name: "getWelcomeMessage"
-            params: ["customerName", "region"]
-            expression: `
-                const locale = region === 'UK' ? 'en-GB' : 'en-HK';
-                const timeOfDay = new Date().getHours();
-                let greeting = '';
-                
-                if (timeOfDay < 12) greeting = 'Good morning';
-                else if (timeOfDay < 18) greeting = 'Good afternoon';
-                else greeting = 'Good evening';
-                
-                return `${greeting}, ${customerName}!`;
-            `
-        }
-    ]
-    
     layout: {
         type: stack
+        spacing: 16
         components: [
             {
-                type: header
-                title: "Your Pre-approved Offer"
-                subtitle: "{{getWelcomeMessage(userProfile.name, userProfile.region)}}"
-            },
-            {
                 type: card
-                components: [
-                    {
-                        type: text
-                        value: "You're pre-approved for a loan top-up"
-                        properties: {
-                            style: "heading"
-                        }
-                    },
-                    {
-                        type: text
-                        value: "Based on your good standing, you can borrow additional funds on your existing loan."
-                        properties: {
+                title: "Your Loan Top-up Offer"
+                content: {
+                    type: stack
+                    components: [
+                        {
+                            type: text
+                            text: "Based on your loan history, we can offer you a loan top-up:"
                             style: "body"
-                        }
-                    },
-                    {
-                        type: divider
-                    },
-                    {
-                        type: fieldDisplay
-                        label: "Maximum Top-up Amount"
-                        value: "{{formatCurrency(topupOffer.maxTopupAmount, userProfile.region)}}"
-                        properties: {
-                            style: "highlight"
-                        }
-                    },
-                    {
-                        type: fieldDisplay
-                        label: "Interest Rate"
-                        value: "{{userProfile.customerSegment === 'Basic' ? (userProfile.region === 'UK' ? '6.9% APR' : '7.2% APR') : (userProfile.region === 'UK' ? '5.4% APR' : '5.8% APR')}}"
-                    },
-                    {
-                        type: fieldDisplay
-                        label: "Current Loan Balance"
-                        value: "{{formatCurrency(loan.currentBalance, userProfile.region)}}"
-                    },
-                    {
-                        type: fieldDisplay
-                        label: "Current Monthly Payment"
-                        value: "{{formatCurrency(loan.monthlyPayment, userProfile.region)}}"
-                    },
-                    {
-                        type: button
-                        text: "Select Amount"
-                        properties: {
-                            style: "primary"
-                        }
-                        actions: {
-                            onTap: {
-                                navigate: TopupAmountSelection
-                                params: {
-                                    loanId: "{{params.loanId}}",
-                                    offerId: "{{topupOffer.id}}"
+                        },
+                        {
+                            type: infoBox
+                            items: [
+                                {
+                                    label: "Maximum top-up amount"
+                                    value: "bind:formatCurrency(offer.maxTopupAmount, userRegion)"
+                                },
+                                {
+                                    label: "Interest rate"
+                                    value: "bind:offer.interestRate"
+                                },
+                                {
+                                    label: "Customer segment"
+                                    value: "bind:offer.customerSegment"
+                                },
+                                {
+                                    label: "Offer valid until"
+                                    value: "bind:formatDate(offer.expiryDate, userRegion)"
                                 }
-                            }
+                            ]
                         }
-                    },
-                    {
-                        type: button
-                        text: "No thanks, maybe later"
-                        properties: {
-                            style: "text"
-                        }
-                        actions: {
-                            onTap: {
-                                navigate: LoansOverview
-                            }
-                        }
-                    }
-                ]
-            },
-            {
-                type: card
-                components: [
-                    {
-                        type: text
-                        value: "{{userProfile.customerSegment === 'Basic' ? (userProfile.region === 'UK' ? 'No early repayment charges' : 'Standard repayment flexibility') : (userProfile.region === 'UK' ? 'Premier rate guarantee and priority service' : 'Jade member priority processing and rate discount')}}"
-                        properties: {
-                            style: "highlight",
-                            icon: "star"
-                        }
-                    }
-                ]
-            }
-        ]
-    }
-    
-    onLoad: {
-        apiCalls: [
-            {
-                id: getLoan
-                params: {
-                    loanId: "{{params.loanId}}"
-                }
-                onSuccess: {
-                    store: {
-                        key: "loan"
-                        value: "{{result}}"
-                    }
+                    ]
                 }
             },
             {
-                id: getTopupOffer
-                params: {
-                    loanId: "{{params.loanId}}"
-                }
-                onSuccess: {
-                    store: {
-                        key: "topupOffer"
-                        value: "{{result}}"
-                    }
-                }
+                type: button
+                label: "Apply for Top-up"
+                variant: "primary"
+                action: navigate(AmountSelectionScreen)
+            },
+            {
+                type: button
+                label: "Not now"
+                variant: "secondary"
+                action: navigate(LoansOverview)
             }
         ]
     }
 }
 
-screen TopupAmountSelection {
+screen AmountSelectionScreen {
     title: "Select Top-up Amount"
     
-    params: {
-        loanId: string required,
-        offerId: string required
-    }
-    
-    dataFunctions: [
-        {
-            name: "formatCurrency"
-            params: ["value", "region"]
-            expression: "region === 'UK' ? `£${value.toFixed(2)}` : `HK$${value.toFixed(2)}`"
-        },
-        {
-            name: "getPresetAmounts"
-            params: ["minAmount", "maxAmount", "segment"]
-            expression: `
-                const spread = maxAmount - minAmount;
-                const step = spread / 4;
-                return [
-                    Math.round(minAmount + step),
-                    Math.round(minAmount + step * 2),
-                    Math.round(minAmount + step * 3)
-                ];
-            `
-        },
-        {
-            name: "calculateNewMonthlyPayment"
-            params: ["currentBalance", "topupAmount", "interestRate", "remainingTerm"]
-            expression: `
-                const totalLoan = currentBalance + topupAmount;
-                const monthlyInterestRate = interestRate / 100 / 12;
-                return totalLoan * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, remainingTerm) / (Math.pow(1 + monthlyInterestRate, remainingTerm) - 1);
-            `
-        },
-        {
-            name: "calculateTotalInterest"
-            params: ["monthlyPayment", "remainingTerm", "totalLoan"]
-            expression: "monthlyPayment * remainingTerm - totalLoan"
-        }
-    ]
-    
-    state: {
-        selectedAmount: number,
-        customAmount: boolean,
-        newMonthlyPayment: number,
-        newTotalLoan: number,
-        totalInterest: number
-    }
-    
     layout: {
         type: stack
+        spacing: 16
         components: [
             {
-                type: header
-                title: "Select Top-up Amount"
-                subtitle: "Choose how much you'd like to borrow"
+                type: "card"
+                title: "How much would you like?"
+                content: {
+                    type: "stack"
+                    components: [
+                        {
+                            type: "text"
+                            text: "Please enter the amount you would like to top-up your loan by:"
+                            style: "body"
+                        },
+                        {
+                            type: "sliderInput"
+                            id: "amountField"
+                            label: "Top-up amount"
+                            min: "bind:offer.minTopupAmount"
+                            max: "bind:offer.maxTopupAmount"
+                            step: 100
+                            initialValue: "bind:suggestedAmount"
+                            currencySymbol: "bind:offer.currencySymbol"
+                        }
+                    ]
+                }
             },
             {
-                type: card
-                components: [
+                type: "infoPanel"
+                title: "Your new loan details"
+                items: [
                     {
-                        type: text
-                        value: "Pre-set Amount Options"
-                        properties: {
-                            style: "heading"
-                        }
+                        label: "Original loan amount"
+                        value: "bind:formatCurrency(currentLoanAmount, userRegion)"
                     },
                     {
-                        type: stack
-                        properties: {
-                            direction: "horizontal",
-                            spacing: "medium"
-                        }
-                        components: [
-                            {
-                                type: forEach
-                                data: "{{getPresetAmounts(topupOffer.minTopupAmount, topupOffer.maxTopupAmount, userProfile.customerSegment)}}"
-                                itemComponent: {
-                                    type: button
-                                    text: "{{formatCurrency(item, userProfile.region)}}"
-                                    properties: {
-                                        style: "{{state.selectedAmount === item ? 'primary' : 'outline'}}"
-                                    }
-                                    actions: {
-                                        onTap: {
-                                            setState: [
-                                                {
-                                                    key: "selectedAmount"
-                                                    value: "{{item}}"
-                                                },
-                                                {
-                                                    key: "customAmount"
-                                                    value: false
-                                                },
-                                                {
-                                                    key: "newMonthlyPayment"
-                                                    value: "{{calculateNewMonthlyPayment(loan.currentBalance, item, topupOffer.interestRate, loan.remainingTerm)}}"
-                                                },
-                                                {
-                                                    key: "newTotalLoan"
-                                                    value: "{{loan.currentBalance + item}}"
-                                                },
-                                                {
-                                                    key: "totalInterest"
-                                                    value: "{{calculateTotalInterest(calculateNewMonthlyPayment(loan.currentBalance, item, topupOffer.interestRate, loan.remainingTerm), loan.remainingTerm, loan.currentBalance + item)}}"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                }
-                            }
-                        ]
+                        label: "Top-up amount"
+                        value: "bind:formatCurrency(selectedAmount, userRegion)"
                     },
                     {
-                        type: button
-                        text: "Enter Custom Amount"
-                        properties: {
-                            style: "{{state.customAmount ? 'primary' : 'outline'}}"
-                        }
-                        actions: {
-                            onTap: {
-                                setState: [
-                                    {
-                                        key: "customAmount"
-                                        value: true
-                                    }
-                                ]
-                            }
-                        }
-                    },
-                    {
-                        type: conditional
-                        condition: "state.customAmount"
-                        components: [
-                            {
-                                type: stack
-                                components: [
-                                    {
-                                        type: slider
-                                        min: "{{topupOffer.minTopupAmount}}"
-                                        max: "{{topupOffer.maxTopupAmount}}"
-                                        step: 100
-                                        value: "{{state.selectedAmount || topupOffer.minTopupAmount}}"
-                                        onChange: {
-                                            setState: [
-                                                {
-                                                    key: "selectedAmount"
-                                                    value: "{{value}}"
-                                                },
-                                                {
-                                                    key: "newMonthlyPayment"
-                                                    value: "{{calculateNewMonthlyPayment(loan.currentBalance, value, topupOffer.interestRate, loan.remainingTerm)}}"
-                                                },
-                                                {
-                                                    key: "newTotalLoan"
-                                                    value: "{{loan.currentBalance + value}}"
-                                                },
-                                                {
-                                                    key: "totalInterest"
-                                                    value: "{{calculateTotalInterest(calculateNewMonthlyPayment(loan.currentBalance, value, topupOffer.interestRate, loan.remainingTerm), loan.remainingTerm, loan.currentBalance + value)}}"
-                                                }
-                                            ]
-                                        }
-                                    },
-                                    {
-                                        type: input
-                                        inputType: "number"
-                                        label: "Enter amount"
-                                        placeholder: "Amount"
-                                        value: "{{state.selectedAmount}}"
-                                        validation: {
-                                            minValue: "{{topupOffer.minTopupAmount}}"
-                                            maxValue: "{{topupOffer.maxTopupAmount}}"
-                                            message: "Amount must be between {{formatCurrency(topupOffer.minTopupAmount, userProfile.region)}} and {{formatCurrency(topupOffer.maxTopupAmount, userProfile.region)}}"
-                                        }
-                                        onChange: {
-                                            setState: [
-                                                {
-                                                    key: "selectedAmount"
-                                                    value: "{{value}}"
-                                                },
-                                                {
-                                                    key: "newMonthlyPayment"
-                                                    value: "{{calculateNewMonthlyPayment(loan.currentBalance, value, topupOffer.interestRate, loan.remainingTerm)}}"
-                                                },
-                                                {
-                                                    key: "newTotalLoan"
-                                                    value: "{{loan.currentBalance + value}}"
-                                                },
-                                                {
-                                                    key: "totalInterest"
-                                                    value: "{{calculateTotalInterest(calculateNewMonthlyPayment(loan.currentBalance, value, topupOffer.interestRate, loan.remainingTerm), loan.remainingTerm, loan.currentBalance + value)}}"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        type: divider
-                    },
-                    {
-                        type: conditional
-                        condition: "state.selectedAmount > 0"
-                        components: [
-                            {
-                                type: text
-                                value: "Impact on your loan"
-                                properties: {
-                                    style: "heading"
-                                }
-                            },
-                            {
-                                type: fieldDisplay
-                                label: "Top-up Amount"
-                                value: "{{formatCurrency(state.selectedAmount, userProfile.region)}}"
-                                properties: {
-                                    style: "highlight"
-                                }
-                            },
-                            {
-                                type: fieldDisplay
-                                label: "New Total Balance"
-                                value: "{{formatCurrency(state.newTotalLoan, userProfile.region)}}"
-                            },
-                            {
-                                type: fieldDisplay
-                                label: "New Monthly Payment"
-                                value: "{{formatCurrency(state.newMonthlyPayment, userProfile.region)}}"
-                            },
-                            {
-                                type: fieldDisplay
-                                label: "Remaining Term"
-                                value: "{{loan.remainingTerm}} months"
-                            },
-                            {
-                                type: fieldDisplay
-                                label: "Total Interest Payable"
-                                value: "{{formatCurrency(state.totalInterest, userProfile.region)}}"
-                            }
-                        ]
-                    },
-                    {
-                        type: button
-                        text: "Continue"
-                        properties: {
-                            style: "primary",
-                            disabled: "{{!state.selectedAmount || state.selectedAmount < topupOffer.minTopupAmount || state.selectedAmount > topupOffer.maxTopupAmount}}"
-                        }
-                        actions: {
-                            onTap: {
-                                navigate: TopupTermsReview
-                                params: {
-                                    loanId: "{{params.loanId}}",
-                                    offerId: "{{params.offerId}}",
-                                    selectedAmount: "{{state.selectedAmount}}",
-                                    newMonthlyPayment: "{{state.newMonthlyPayment}}",
-                                    newTotalLoan: "{{state.newTotalLoan}}",
-                                    totalInterest: "{{state.totalInterest}}"
-                                }
-                            }
-                        }
-                    },
-                    {
-                        type: button
-                        text: "Back"
-                        properties: {
-                            style: "text"
-                        }
-                        actions: {
-                            onTap: {
-                                navigate: TopupOffer
-                                params: {
-                                    loanId: "{{params.loanId}}"
-                                }
-                            }
-                        }
+                        label: "New total loan"
+                        value: "bind:formatCurrency(currentLoanAmount + selectedAmount, userRegion)"
                     }
                 ]
-            }
-        ]
-    }
-    
-    onLoad: {
-        apiCalls: [
-            {
-                id: getLoan
-                params: {
-                    loanId: "{{params.loanId}}"
-                }
-                onSuccess: {
-                    store: {
-                        key: "loan"
-                        value: "{{result}}"
-                    }
-                }
             },
             {
-                id: getTopupOffer
-                params: {
-                    id: "{{params.offerId}}"
-                }
-                onSuccess: {
-                    store: {
-                        key: "topupOffer"
-                        value: "{{result}}"
-                    }
-                }
+                type: "button"
+                label: "Continue"
+                variant: "primary"
+                action: navigate(TermsScreen)
+            },
+            {
+                type: "button"
+                label: "Back"
+                variant: "secondary"
+                action: navigateBack()
             }
         ]
     }
 }
 
-screen TopupTermsReview {
-    title: "Review Terms"
-    
-    params: {
-        loanId: string required,
-        offerId: string required,
-        selectedAmount: number required,
-        newMonthlyPayment: number required,
-        newTotalLoan: number required,
-        totalInterest: number required
-    }
-    
-    dataFunctions: [
-        {
-            name: "formatCurrency"
-            params: ["value", "region"]
-            expression: "region === 'UK' ? `£${value.toFixed(2)}` : `HK$${value.toFixed(2)}`"
-        },
-        {
-            name: "formatDate"
-            params: ["dateValue", "region"]
-            expression: "new Intl.DateTimeFormat(region === 'UK' ? 'en-GB' : 'en-HK', { dateStyle: 'medium' }).format(new Date(dateValue))"
-        },
-        {
-            name: "getTotalRepayable"
-            params: ["monthlyPayment", "remainingTerm"]
-            expression: "monthlyPayment * remainingTerm"
-        },
-        {
-            name: "getRegulatorInfo"
-            params: ["region"]
-            expression: "region === 'UK' ? 'Financial Conduct Authority (FCA)' : 'Hong Kong Monetary Authority (HKMA)'"
-        },
-        {
-            name: "getCoolingOffPeriod"
-            params: ["region"]
-            expression: "region === 'UK' ? '14 days' : '7 days'"
-        }
-    ]
+screen TermsScreen {
+    title: "Terms & Conditions"
     
     layout: {
         type: stack
+        spacing: 16
         components: [
             {
-                type: header
-                title: "Review Terms"
-                subtitle: "Please review the loan top-up terms before proceeding"
-            },
-            {
-                type: card
-                components: [
-                    {
-                        type: text
-                        value: "Loan Top-up Details"
-                        properties: {
-                            style: "heading"
-                        }
-                    },
-                    {
-                        type: table
-                        rows: [
-                            {
-                                label: "Original Loan Amount"
-                                value: "{{formatCurrency(loan.originalAmount, userProfile.region)}}"
-                            },
-                            {
-                                label: "Current Balance"
-                                value: "{{formatCurrency(loan.currentBalance, userProfile.region)}}"
-                            },
-                            {
-                                label: "Top-up Amount"
-                                value: "{{formatCurrency(params.selectedAmount, userProfile.region)}}"
-                                properties: {
-                                    highlight: true
+                type: "card"
+                title: "Loan Terms"
+                content: {
+                    type: "stack"
+                    components: [
+                        {
+                            type: "infoBox"
+                            items: [
+                                {
+                                    label: "Top-up amount"
+                                    value: "bind:formatCurrency(selectedAmount, userRegion)"
+                                },
+                                {
+                                    label: "New total loan"
+                                    value: "bind:formatCurrency(newTotalLoan, userRegion)"
+                                },
+                                {
+                                    label: "Remaining term"
+                                    value: "bind:remainingTerm + ' months'"
+                                },
+                                {
+                                    label: "New monthly payment"
+                                    value: "bind:formatCurrency(newMonthlyPayment, userRegion)"
+                                },
+                                {
+                                    label: "Total repayable"
+                                    value: "bind:formatCurrency(totalRepayable, userRegion)"
+                                },
+                                {
+                                    label: "APR"
+                                    value: "bind:effectiveAPR + '%'"
                                 }
-                            },
-                            {
-                                label: "New Total Balance"
-                                value: "{{formatCurrency(params.newTotalLoan, userProfile.region)}}"
-                            },
-                            {
-                                label: "Current Monthly Payment"
-                                value: "{{formatCurrency(loan.monthlyPayment, userProfile.region)}}"
-                            },
-                            {
-                                label: "New Monthly Payment"
-                                value: "{{formatCurrency(params.newMonthlyPayment, userProfile.region)}}"
-                                properties: {
-                                    highlight: true
-                                }
-                            },
-                            {
-                                label: "Remaining Term"
-                                value: "{{loan.remainingTerm}} months"
-                            },
-                            {
-                                label: "Interest Rate"
-                                value: "{{userProfile.customerSegment === 'Basic' ? (userProfile.region === 'UK' ? '6.9% APR' : '7.2% APR') : (userProfile.region === 'UK' ? '5.4% APR' : '5.8% APR')}}"
-                            },
-                            {
-                                label: "Total Interest Payable"
-                                value: "{{formatCurrency(params.totalInterest, userProfile.region)}}"
-                            },
-                            {
-                                label: "Total Repayable"
-                                value: "{{formatCurrency(getTotalRepayable(params.newMonthlyPayment, loan.remainingTerm), userProfile.region)}}"
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                type: card
-                components: [
-                    {
-                        type: text
-                        value: "Regulatory Information"
-                        properties: {
-                            style: "heading"
+                            ]
                         }
-                    },
-                    {
-                        type: text
-                        value: "Representative APR: {{userProfile.customerSegment === 'Basic' ? (userProfile.region === 'UK' ? '6.9%' : '7.2%') : (userProfile.region === 'UK' ? '5.4%' : '5.8%')}}"
-                        properties: {
-                            style: "body"
-                        }
-                    },
-                    {
-                        type: text
-                        value: "This top-up is regulated by the {{getRegulatorInfo(userProfile.region)}}"
-                        properties: {
-                            style: "body"
-                        }
-                    },
-                    {
-                        type: text
-                        value: "You have a cooling-off period of {{getCoolingOffPeriod(userProfile.region)}} after confirmation"
-                        properties: {
-                            style: "body"
-                        }
-                    }
-                ]
-            },
-            {
-                type: card
-                components: [
-                    {
-                        type: text
-                        value: "{{userProfile.customerSegment === 'Basic' ? (userProfile.region === 'UK' ? 'No early repayment charges' : 'Standard repayment flexibility') : (userProfile.region === 'UK' ? 'Premier rate guarantee and priority service' : 'Jade member priority processing and rate discount')}}"
-                        properties: {
-                            style: "highlight",
-                            icon: "star"
-                        }
-                    }
-                ]
-            },
-            {
-                type: button
-                text: "Accept"
-                properties: {
-                    style: "primary"
-                }
-                actions: {
-                    onTap: {
-                        navigate: TopupConfirmation
-                        params: {
-                            loanId: "{{params.loanId}}",
-                            offerId: "{{params.offerId}}",
-                            selectedAmount: "{{params.selectedAmount}}",
-                            newMonthlyPayment: "{{params.newMonthlyPayment}}",
-                            newTotalLoan: "{{params.newTotalLoan}}"
-                        }
-                    }
+                    ]
                 }
             },
             {
-                type: button
-                text: "Go Back"
-                properties: {
-                    style: "text"
-                }
-                actions: {
-                    onTap: {
-                        navigate: TopupAmountSelection
-                        params: {
-                            loanId: "{{params.loanId}}",
-                            offerId: "{{params.offerId}}"
-                        }
-                    }
-                }
-            }
-        ]
-    }
-    
-    onLoad: {
-        apiCalls: [
+                type: "documentViewer"
+                title: "Terms & Conditions"
+                documentUrl: "bind:termsDocumentUrl"
+                height: 300
+            },
             {
-                id: getLoan
-                params: {
-                    loanId: "{{params.loanId}}"
-                }
-                onSuccess: {
-                    store: {
-                        key: "loan"
-                        value: "{{result}}"
-                    }
-                }
+                type: "checkbox"
+                id: "termsCheckbox"
+                label: "I have read and agree to the terms and conditions"
+                required: true
+            },
+            {
+                type: "button"
+                label: "Continue"
+                variant: "primary"
+                action: navigate(ConfirmationScreen)
+                disabled: "!termsCheckbox"
+            },
+            {
+                type: "button"
+                label: "Back"
+                variant: "secondary"
+                action: navigateBack()
             }
         ]
     }
 }
 
-screen TopupConfirmation {
-    title: "Confirmation"
-    
-    params: {
-        loanId: string required,
-        offerId: string required,
-        selectedAmount: number required,
-        newMonthlyPayment: number required,
-        newTotalLoan: number required
-    }
-    
-    state: {
-        termsAgreed: boolean,
-        isProcessing: boolean,
-        isComplete: boolean,
-        reference: string
-    }
-    
-    dataFunctions: [
-        {
-            name: "formatCurrency"
-            params: ["value", "region"]
-            expression: "region === 'UK' ? `£${value.toFixed(2)}` : `HK$${value.toFixed(2)}`"
-        },
-        {
-            name: "formatDate"
-            params: ["dateValue", "region"]
-            expression: "new Intl.DateTimeFormat(region === 'UK' ? 'en-GB' : 'en-HK', { dateStyle: 'medium' }).format(new Date(dateValue))"
-        },
-        {
-            name: "getNextWorkingDay"
-            params: ["date", "region"]
-            expression: `
-                const result = new Date(date);
-                result.setDate(result.getDate() + 1);
-                
-                // Skip weekends
-                if (result.getDay() === 0) result.setDate(result.getDate() + 1); // Skip Sunday
-                if (result.getDay() === 6) result.setDate(result.getDate() + 2); // Skip Saturday
-                
-                return result;
-            `
-        },
-        {
-            name: "getFirstPaymentDate"
-            params: ["region"]
-            expression: `
-                const result = new Date();
-                result.setMonth(result.getMonth() + 1);
-                return result;
-            `
-        },
-        {
-            name: "getFundsAvailabilityMessage"
-            params: ["region", "time"]
-            expression: `
-                const hour = time.getHours();
-                const isWeekend = time.getDay() === 0 || time.getDay() === 6;
-                const isHoliday = false; // Would check against holiday calendar
-                
-                if (isHoliday) return "Bank holiday processing notice";
-                if (isWeekend) return "Weekend processing notice";
-                
-                if (region === 'UK') {
-                    if (hour < 6) return "Night owl banking - funds available immediately";
-                    if (hour >= 17) return "Evening processing confirmation";
-                    return "Funds available immediately";
-                } else if (region === 'HK') {
-                    if (hour < 6) return "After-hours processing - funds available next working day";
-                    if (hour >= 17) return "Evening processing - funds available next working day";
-                    return "Funds available immediately";
-                }
-                
-                return "Funds available immediately";
-            `
-        },
-        {
-            name: "getSpecialNotice"
-            params: ["region", "date"]
-            expression: `
-                const month = date.getMonth();
-                const day = date.getDate();
-                
-                if (region === 'UK') {
-                    if (month === 11 && day === 24) return "Holiday period service notice";
-                } else if (region === 'HK') {
-                    if (month === 0 && day === 25) return "Lunar New Year holiday processing notice";
-                }
-                
-                const hour = date.getHours();
-                if (hour < 6) {
-                    return region === 'UK' ? "Night owl banking service active" : "After-hours processing notice";
-                }
-                
-                return null;
-            `
-        }
-    ]
+screen ConfirmationScreen {
+    title: "Confirm Top-up"
     
     layout: {
-        type: conditional
-        condition: "!state.isComplete"
-        trueComponent: {
-            type: stack
-            components: [
-                {
-                    type: header
-                    title: "Confirm Top-up"
-                    subtitle: "Please review and confirm your loan top-up"
-                },
-                {
-                    type: card
-                    components: [
-                        {
-                            type: text
-                            value: "You are about to top up your loan with the following details:"
-                            properties: {
-                                style: "body"
-                            }
-                        },
-                        {
-                            type: table
-                            rows: [
-                                {
-                                    label: "Top-up Amount"
-                                    value: "{{formatCurrency(params.selectedAmount, userProfile.region)}}"
-                                    properties: {
-                                        highlight: true
-                                    }
-                                },
-                                {
-                                    label: "New Total Loan"
-                                    value: "{{formatCurrency(params.newTotalLoan, userProfile.region)}}"
-                                },
-                                {
-                                    label: "New Monthly Payment"
-                                    value: "{{formatCurrency(params.newMonthlyPayment, userProfile.region)}}"
-                                },
-                                {
-                                    label: "First New Payment Date"
-                                    value: "{{formatDate(getFirstPaymentDate(userProfile.region), userProfile.region)}}"
-                                }
-                            ]
-                        },
-                        {
-                            type: checkbox
-                            label: "I confirm that I have read and agree to the terms and conditions"
-                            checked: "{{state.termsAgreed}}"
-                            onChange: {
-                                setState: [
-                                    {
-                                        key: "termsAgreed"
-                                        value: "{{value}}"
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                },
-                {
-                    type: card
-                    components: [
-                        {
-                            type: text
-                            value: "Region-specific disclosures:"
-                            properties: {
-                                style: "heading"
-                            }
-                        },
-                        {
-                            type: conditional
-                            condition: "userProfile.region === 'UK'"
-                            components: [
-                                {
-                                    type: text
-                                    value: "Credit reference agency notice and financial ombudsman details"
-                                    properties: {
-                                        style: "body"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            type: conditional
-                            condition: "userProfile.region === 'HK'"
-                            components: [
-                                {
-                                    type: text
-                                    value: "HKMA regulatory notice and complaint procedure details"
-                                    properties: {
-                                        style: "body"
-                                    }
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    type: conditional
-                    condition: "state.isProcessing"
-                    trueComponent: {
-                        type: progressIndicator
-                        message: "Processing your top-up request..."
-                    }
-                    falseComponent: {
-                        type: stack
-                        components: [
-                            {
-                                type: button
-                                text: "Confirm Top-up"
-                                properties: {
-                                    style: "primary",
-                                    disabled: "{{!state.termsAgreed}}"
-                                }
-                                actions: {
-                                    onTap: {
-                                        setState: [
-                                            {
-                                                key: "isProcessing"
-                                                value: true
-                                            }
-                                        ]
-                                        apiCall: {
-                                            id: createTopup
-                                            body: {
-                                                loanId: "{{params.loanId}}",
-                                                amount: "{{params.selectedAmount}}",
-                                                interestRate: "{{topupOffer.interestRate}}"
-                                            }
-                                            onSuccess: {
-                                                store: {
-                                                    key: "topupConfirmation"
-                                                    value: "{{result}}"
-                                                }
-                                                setState: [
-                                                    {
-                                                        key: "isComplete"
-                                                        value: true
-                                                    },
-                                                    {
-                                                        key: "isProcessing"
-                                                        value: false
-                                                    },
-                                                    {
-                                                        key: "reference"
-                                                        value: "{{result.reference}}"
-                                                    }
-                                                ]
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            {
-                                type: button
-                                text: "Go Back"
-                                properties: {
-                                    style: "text"
-                                }
-                                actions: {
-                                    onTap: {
-                                        navigate: TopupTermsReview
-                                        params: {
-                                            loanId: "{{params.loanId}}",
-                                            offerId: "{{params.offerId}}",
-                                            selectedAmount: "{{params.selectedAmount}}",
-                                            newMonthlyPayment: "{{params.newMonthlyPayment}}",
-                                            newTotalLoan: "{{params.newTotalLoan}}"
-                                        }
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                }
-            ]
-        }
-        falseComponent: {
-            type: stack
-            components: [
-                {
-                    type: header
-                    title: "Top-up Successful!"
-                    subtitle: "Your loan top-up has been approved"
-                },
-                {
-                    type: successIcon
-                    properties: {
-                        size: "large",
-                        animation: true
-                    }
-                },
-                {
-                    type: card
-                    components: [
-                        {
-                            type: text
-                            value: "Confirmation Details"
-                            properties: {
-                                style: "heading"
-                            }
-                        },
-                        {
-                            type: table
-                            rows: [
-                                {
-                                    label: "Top-up Amount"
-                                    value: "{{formatCurrency(params.selectedAmount, userProfile.region)}}"
-                                    properties: {
-                                        highlight: true
-                                    }
-                                },
-                                {
-                                    label: "Reference Number"
-                                    value: "{{state.reference}}"
-                                },
-                                {
-                                    label: "Date"
-                                    value: "{{formatDate(new Date(), userProfile.region)}}"
-                                }
-                            ]
-                        },
-                        {
-                            type: text
-                            value: "{{getFundsAvailabilityMessage(userProfile.region, new Date())}}"
-                            properties: {
-                                style: "body"
-                            }
-                        },
-                        {
-                            type: conditional
-                            condition: "getSpecialNotice(userProfile.region, new Date()) !== null"
-                            components: [
-                                {
-                                    type: text
-                                    value: "{{getSpecialNotice(userProfile.region, new Date())}}"
-                                    properties: {
-                                        style: "highlight"
-                                    }
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    type: button
-                    text: "View Updated Loan Details"
-                    properties: {
-                        style: "primary"
-                    }
-                    actions: {
-                        onTap: {
-                            navigate: LoansOverview
-                        }
-                    }
-                },
-                {
-                    type: button
-                    text: "Return to Dashboard"
-                    properties: {
-                        style: "outline"
-                    }
-                    actions: {
-                        onTap: {
-                            navigate: LoansOverview
-                        }
-                    }
-                }
-            ]
-        }
-    }
-    
-    onLoad: {
-        apiCalls: [
+        type: stack
+        spacing: 16
+        components: [
             {
-                id: getLoan
-                params: {
-                    loanId: "{{params.loanId}}"
-                }
-                onSuccess: {
-                    store: {
-                        key: "loan"
-                        value: "{{result}}"
-                    }
+                type: "card"
+                title: "Confirm your loan top-up"
+                content: {
+                    type: "stack"
+                    components: [
+                        {
+                            type: "text"
+                            text: "Please review the details of your loan top-up application:"
+                            style: "body"
+                        },
+                        {
+                            type: "infoBox"
+                            items: [
+                                {
+                                    label: "Top-up amount"
+                                    value: "bind:formatCurrency(selectedAmount, userRegion)"
+                                },
+                                {
+                                    label: "New total loan"
+                                    value: "bind:formatCurrency(newTotalLoan, userRegion)"
+                                },
+                                {
+                                    label: "New monthly payment"
+                                    value: "bind:formatCurrency(newMonthlyPayment, userRegion)"
+                                },
+                                {
+                                    label: "First new payment date"
+                                    value: "bind:formatDate(firstNewPaymentDate, userRegion)"
+                                }
+                            ]
+                        }
+                    ]
                 }
             },
             {
-                id: getTopupOffer
-                params: {
-                    id: "{{params.offerId}}"
-                }
-                onSuccess: {
-                    store: {
-                        key: "topupOffer"
-                        value: "{{result}}"
-                    }
-                }
+                type: "note"
+                title: "Important"
+                text: "By confirming this top-up, you agree to the revised loan terms. The top-up amount will be credited to your linked account."
+                style: "warning"
+            },
+            {
+                type: "button"
+                label: "Confirm Top-up"
+                variant: "primary"
+                action: "createTopup" // This will trigger the API call
+            },
+            {
+                type: "button"
+                label: "Cancel"
+                variant: "secondary"
+                action: navigate(LoansOverview)
             }
         ]
     }
 }
 
-screen TopupSuccess {
-    title: "Top-up Complete"
-    
-    params: {
-        topupId: string required
-    }
-    
-    dataFunctions: [
-        {
-            name: "formatCurrency"
-            params: ["value", "region"]
-            expression: "region === 'UK' ? `£${value.toFixed(2)}` : `HK$${value.toFixed(2)}`"
-        },
-        {
-            name: "formatDate"
-            params: ["dateValue", "region"]
-            expression: "new Intl.DateTimeFormat(region === 'UK' ? 'en-GB' : 'en-HK', { dateStyle: 'medium' }).format(new Date(dateValue))"
-        }
-    ]
+screen SuccessScreen {
+    title: "Top-up Approved"
     
     layout: {
         type: stack
+        spacing: 16
         components: [
             {
-                type: successIcon
-                properties: {
-                    size: "large",
-                    animation: true
-                }
+                type: "icon"
+                name: "checkCircle"
+                color: "#00C48C"
+                size: "large"
+                alignment: "center"
             },
             {
-                type: header
-                title: "Top-up Successful!"
-                subtitle: "Your loan top-up has been processed"
+                type: "text"
+                text: "Your loan top-up has been approved!"
+                style: "heading1"
+                alignment: "center"
             },
             {
-                type: card
-                components: [
-                    {
-                        type: fieldDisplay
-                        label: "Amount"
-                        value: "{{formatCurrency(topupConfirmation.amount, userProfile.region)}}"
-                    },
-                    {
-                        type: fieldDisplay
-                        label: "Reference"
-                        value: "{{topupConfirmation.reference}}"
-                    },
-                    {
-                        type: fieldDisplay
-                        label: "Date"
-                        value: "{{formatDate(topupConfirmation.processingDate, userProfile.region)}}"
-                    },
-                    {
-                        type: fieldDisplay
-                        label: "Funds Available"
-                        value: "{{formatDate(topupConfirmation.disbursementDate, userProfile.region)}}"
-                    }
-                ]
-            },
-            {
-                type: card
-                components: [
-                    {
-                        type: text
-                        value: "Next Steps"
-                        properties: {
-                            style: "heading"
-                        }
-                    },
-                    {
-                        type: text
-                        value: "Your funds will be credited to your account. Your new monthly payment of {{formatCurrency(loan.monthlyPayment + (topupConfirmation.amount / loan.remainingTerm), userProfile.region)}} will start from {{formatDate(topupConfirmation.firstNewPaymentDate, userProfile.region)}}."
-                        properties: {
-                            style: "body"
-                        }
-                    },
-                    {
-                        type: conditional
-                        condition: "topupConfirmation.benefitApplied !== null && topupConfirmation.benefitApplied !== undefined"
-                        components: [
-                            {
-                                type: text
-                                value: "{{topupConfirmation.benefitApplied}}"
-                                properties: {
-                                    style: "highlight",
-                                    icon: "star"
+                type: "card"
+                title: "Top-up Details"
+                content: {
+                    type: "stack"
+                    components: [
+                        {
+                            type: "infoBox"
+                            items: [
+                                {
+                                    label: "Top-up amount"
+                                    value: "bind:formatCurrency(confirmation.amount, userRegion)"
+                                },
+                                {
+                                    label: "Reference"
+                                    value: "bind:confirmation.reference"
+                                },
+                                {
+                                    label: "Funds available by"
+                                    value: "bind:formatDate(confirmation.disbursementDate, userRegion)"
+                                },
+                                {
+                                    label: "First new payment date"
+                                    value: "bind:formatDate(confirmation.firstNewPaymentDate, userRegion)"
                                 }
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                type: button
-                text: "View Updated Loan Details"
-                properties: {
-                    style: "primary"
-                }
-                actions: {
-                    onTap: {
-                        navigate: LoansOverview
-                    }
+                            ]
+                        }
+                    ]
                 }
             },
             {
-                type: button
-                text: "Return to Dashboard"
-                properties: {
-                    style: "outline"
-                }
-                actions: {
-                    onTap: {
-                        navigate: LoansOverview
-                    }
-                }
-            }
-        ]
-    }
-    
-    onLoad: {
-        apiCalls: [
-            {
-                id: getTopupConfirmation
-                params: {
-                    id: "{{params.topupId}}"
-                }
-                onSuccess: {
-                    store: {
-                        key: "topupConfirmation"
-                        value: "{{result}}"
-                    }
-                }
+                type: "button"
+                label: "Done"
+                variant: "primary"
+                action: navigate(LoansOverview)
             },
             {
-                id: getLoan
-                params: {
-                    loanId: "{{topupConfirmation.loanId}}"
-                }
-                onSuccess: {
-                    store: {
-                        key: "loan"
-                        value: "{{result}}"
-                    }
-                }
+                type: "button"
+                label: "View loan details"
+                variant: "secondary"
+                action: navigate(LoanDetailsScreen)
             }
         ]
     }
