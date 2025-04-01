@@ -370,37 +370,120 @@ rules {
         <div class="section" id="error-handling">
             <h2>6. Error Handling</h2>
             <p>
-                Error handling is a critical aspect of any system, and the FinApp DSL architecture provides several mechanisms for handling errors.
+                The FinApp DSL provides a comprehensive error handling framework that ensures consistent error management across the application.
             </p>
+            
             <div id="error-categories">
                 <h3>6.1 Error Categories</h3>
                 <p>
-                    Errors in the FinApp DSL can be categorized into several types:
+                    The DSL defines several error categories to handle different types of errors consistently:
                 </p>
-                <ul>
-                    <li>Syntax errors</li>
-                    <li>Semantic errors</li>
-                    <li>Runtime errors</li>
-                    <li>Integration errors</li>
-                </ul>
+                <pre><code>// Error Categories in DSL
+errors {
+  category NetworkError {
+    codes: [408, 502, 503, 504]
+    severity: high
+    retryable: true
+  }
+  
+  category ValidationError {
+    severity: medium
+    retryable: false
+  }
+  
+  category AuthenticationError {
+    codes: [401]
+    severity: high
+    retryable: false
+  }
+  
+  category AuthorisationError {
+    codes: [403]
+    severity: high
+    retryable: false
+  }
+}</code></pre>
             </div>
+
             <div id="error-hub">
                 <h3>6.2 Centralized Error Hub</h3>
                 <p>
-                    The FinApp DSL architecture includes a centralized error hub that collects and manages errors across the system.
+                    Each journey contains a centralized error hub that defines error ownership and handling strategies:
                 </p>
+                <pre><code>// Error Hub in DSL
+journey LoanTopupJourney {
+  errorHub {
+    ownership {
+      owns: [
+        IneligibleLoan,
+        InsufficientIncome,
+        AmountTooLow,
+        AmountTooHigh
+      ]
+      delegates: [
+        NetworkError,
+        AuthenticationError,
+        AuthorisationError
+      ]
+    }
+  }
+}</code></pre>
+                <p>
+                    The error hub provides:
+                </p>
+                <ul>
+                    <li>Clear ownership boundaries between journey and platform</li>
+                    <li>Explicit delegation of platform-level errors</li>
+                    <li>Centralized error flow management</li>
+                    <li>Consistent error handling patterns</li>
+                </ul>
             </div>
+
             <div id="error-handlers">
                 <h3>6.3 Error Handlers</h3>
                 <p>
-                    Error handlers are responsible for handling errors in the FinApp DSL. They can be categorized into several types:
+                    Error handlers define how specific errors should be presented and managed:
                 </p>
-                <ul>
-                    <li>Syntax error handlers</li>
-                    <li>Semantic error handlers</li>
-                    <li>Runtime error handlers</li>
-                    <li>Integration error handlers</li>
-                </ul>
+                <pre><code>// Error Handlers in DSL
+handlers {
+  IneligibleLoan: {
+    display: ErrorBanner
+    location: "TopupOfferScreen"
+    properties: {
+      message: "You are not eligible for a loan top-up at this time"
+      actionText: "View Requirements"
+      action: navigate(EligibilityRequirementsScreen)
+    }
+  }
+  
+  NetworkError: {
+    display: RetryDialog
+    properties: {
+      message: "Connection lost. Please check your internet connection."
+      retryText: "Try Again"
+      cancelText: "Cancel"
+    }
+    recovery: {
+      allowRetry: true
+      maxRetries: 3
+      backoffStrategy: "exponential"
+    }
+  }
+}</code></pre>
+                <p>
+                    The platform provides default handlers for common errors, which can be overridden by journey-specific handlers when needed.
+                </p>
+                <div class="note">
+                    <p>
+                        <strong>Key Benefits:</strong>
+                        <ul>
+                            <li>Consistent error handling across the application</li>
+                            <li>Clear separation between error definition and handling</li>
+                            <li>Flexible recovery strategies</li>
+                            <li>Improved user experience during error scenarios</li>
+                        </ul>
+                    </p>
+                </div>
             </div>
         </div>
 
