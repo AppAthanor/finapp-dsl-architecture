@@ -1,0 +1,426 @@
+app PaymentApp {
+    name: "Payment Service"
+    id: "com.banking.payment"
+    version: "1.0.0"
+    platforms: [ios, android, web]
+    theme: {
+        primaryColor: "#2E5BFF"
+        secondaryColor: "#00C48C"
+        backgroundColor: "#F7F9FC"
+        errorColor: "#FF647C"
+        textColor: "#1A2138"
+    }
+    regions: [
+        { 
+            id: "UK"
+            displayName: "United Kingdom" 
+            locale: "en-GB"
+            currency: "GBP"
+            currencySymbol: "£"
+            dateFormat: "DD/MM/YYYY"
+            regulatoryBody: "FCA"
+        },
+        { 
+            id: "US"
+            displayName: "United States" 
+            locale: "en-US"
+            currency: "USD"
+            currencySymbol: "$"
+            dateFormat: "MM/DD/YYYY"
+            regulatoryBody: "FDIC"
+        }
+    ]
+}
+
+// Error definitions following the RFC
+errors {
+  // System-defined error categories
+  category NetworkError {
+    codes: [408, 502, 503, 504]
+    severity: high
+    retryable: true
+  }
+  
+  category ValidationError {
+    codes: [400, 422]
+    severity: medium
+    retryable: false
+  }
+  
+  category AuthenticationError {
+    codes: [401]
+    severity: high
+    retryable: false
+  }
+  
+  category AuthorisationError {
+    codes: [403]
+    severity: high
+    retryable: false
+  }
+  
+  // Journey-specific error definitions
+  error InsufficientFunds extends ValidationError {
+    code: "PAYMENT_001"
+    message: "Insufficient funds available"
+  }
+  
+  error PaymentLimitExceeded extends ValidationError {
+    code: "PAYMENT_002"
+    message: "This payment exceeds your daily limit"
+  }
+  
+  error RecipientNotFound extends ValidationError {
+    code: "PAYMENT_003"
+    message: "Recipient account not found"
+  }
+  
+  error InvalidAmount extends ValidationError {
+    code: "PAYMENT_004"
+    message: "Please enter a valid amount"
+  }
+}
+
+// Component definitions for error handling
+components {
+  // Error components
+  component ErrorBanner {
+    type: "banner"
+    properties: {
+      message: string
+      actionText: string?
+      action: action?
+      variant: "error" | "warning" = "error"
+    }
+  }
+  
+  component ModalDialog {
+    type: "modal"
+    properties: {
+      title: string
+      message: string
+      primaryAction: string
+      secondaryAction: string?
+      onPrimary: action
+      onSecondary: action?
+    }
+  }
+  
+  component RetryDialog {
+    type: "modal"
+    properties: {
+      title: string
+      message: string
+      retryAction: string
+      cancelAction: string
+      onRetry: action
+      onCancel: action
+    }
+  }
+  
+  component SecurityDialog {
+    type: "modal"
+    properties: {
+      message: string
+      action: string
+      onAction: action
+    }
+  }
+}
+
+// API definitions with error mapping
+api PaymentService {
+  endpoint: "/api/payments"
+  
+  operation createPayment {
+    method: POST
+    request: {
+      fromAccount: string
+      toAccount: string
+      amount: number
+      reference: string
+      paymentDate: date?
+    }
+    response: {
+      paymentId: string
+      status: string
+      timestamp: date
+      reference: string
+    }
+    
+    errorMapping {
+      400: {
+        "INSUFFICIENT_BALANCE" -> InsufficientFunds
+        "DAILY_LIMIT_EXCEEDED" -> PaymentLimitExceeded
+        "RECIPIENT_NOT_FOUND" -> RecipientNotFound
+        "INVALID_AMOUNT" -> InvalidAmount
+      }
+      401: AuthenticationError
+      403: AuthorisationError
+      5xx: NetworkError
+    }
+  }
+}
+
+// Journey definition with error hub
+journey PaymentJourney {
+  screens: [
+    PaymentEntryScreen,
+    PaymentConfirmationScreen,
+    PaymentSuccessScreen
+  ]
+  
+  initialScreen: PaymentEntryScreen
+  
+  // Centralised Error Hub
+  errorHub {
+    // Define which errors this journey owns vs delegates to platform
+    ownership {
+      owns: [InsufficientFunds, PaymentLimitExceeded, RecipientNotFound, InvalidAmount]
+      delegates: [NetworkError, AuthenticationError, AuthorisationError]
+    }
+    
+    // Define handlers for owned errors
+    handlers {
+      InsufficientFunds: {
+        display: ErrorBanner
+        location: "PaymentEntryScreen"
+        properties: {
+          message: error.message
+          actionText: "Check balance"
+          action: navigate(AccountDetailsScreen)
+        }
+        recovery: {
+          allowRetry: true
+          alternativeFlow: navigate(AccountListScreen)
+        }
+      }
+      
+      PaymentLimitExceeded: {
+        display: ModalDialog
+        location: "PaymentEntryScreen"
+        properties: {
+          title: "Daily limit reached"
+          message: error.message
+          primaryAction: "View limits"
+          secondaryAction: "Go back"
+        }
+        recovery: {
+          allowRetry: false
+          alternativeFlow: navigate(LimitsScreen)
+        }
+      }
+      
+      RecipientNotFound: {
+        display: ErrorBanner
+        location: "PaymentEntryScreen"
+        properties: {
+          message: error.message
+          actionText: "Add recipient"
+          action: navigate(AddRecipientScreen)
+        }
+        recovery: {
+          allowRetry: true
+        }
+      }
+      
+      InvalidAmount: {
+        display: ErrorBanner
+        location: "PaymentEntryScreen"
+        properties: {
+          message: error.message
+        }
+        recovery: {
+          allowRetry: true
+          focusField: "amountField"
+        }
+      }
+    }
+  }
+}
+
+// Platform-level default error handlers
+platform {
+  errorHub {
+    defaultHandlers {
+      NetworkError: {
+        display: RetryDialog
+        properties: {
+          title: "Connection issue"
+          message: "We're having trouble connecting. Please try again."
+          retryAction: "Retry"
+          cancelAction: "Cancel"
+        }
+        recovery: {
+          retryStrategy: exponentialBackoff(3, 1000)
+          cancelFlow: navigateBack()
+        }
+      }
+      
+      AuthenticationError: {
+        display: SecurityDialog
+        properties: {
+          message: "Please log in again to continue"
+          action: "Log in"
+        }
+        recovery: {
+          preserveState: true
+          flow: navigate(LoginScreen)
+        }
+      }
+      
+      AuthorisationError: {
+        display: ModalDialog
+        properties: {
+          title: "Access denied"
+          message: "You don't have permission to perform this action."
+          primaryAction: "Go to home"
+          secondaryAction: "Go back"
+        }
+        recovery: {
+          primaryFlow: navigate(HomeScreen)
+          secondaryFlow: navigateBack()
+        }
+      }
+    }
+  }
+}
+
+// Sample screens for the payment journey
+screen PaymentEntryScreen {
+  title: "Make a Payment"
+  
+  layout: {
+    type: stack
+    spacing: 16
+    components: [
+      {
+        type: "textField"
+        id: "recipientField"
+        label: "Recipient Account"
+        required: true
+        validation: "^[0-9]{8,12}$"
+        validationMessage: "Please enter a valid account number"
+      },
+      {
+        type: "currencyField"
+        id: "amountField"
+        label: "Amount"
+        required: true
+        validation: ">0"
+        validationMessage: "Please enter an amount greater than 0"
+      },
+      {
+        type: "textField"
+        id: "referenceField"
+        label: "Reference"
+        required: true
+        maxLength: 50
+      },
+      {
+        type: "button"
+        id: "continueButton"
+        label: "Continue"
+        variant: "primary"
+        action: navigate(PaymentConfirmationScreen)
+      }
+    ]
+  }
+}
+
+screen PaymentConfirmationScreen {
+  title: "Confirm Payment"
+  
+  layout: {
+    type: stack
+    spacing: 16
+    components: [
+      {
+        type: "summaryItem"
+        label: "From Account"
+        value: "bind:fromAccount"
+      },
+      {
+        type: "summaryItem"
+        label: "To Account"
+        value: "bind:recipientAccount"
+      },
+      {
+        type: "summaryItem"
+        label: "Amount"
+        value: "bind:amount"
+      },
+      {
+        type: "summaryItem"
+        label: "Reference"
+        value: "bind:reference"
+      },
+      {
+        type: "checkbox"
+        id: "termsCheckbox"
+        label: "I confirm the payment details are correct"
+        required: true
+      },
+      {
+        type: "button"
+        id: "confirmButton"
+        label: "Confirm Payment"
+        variant: "primary"
+        action: "createPayment"
+      },
+      {
+        type: "button"
+        id: "backButton"
+        label: "Back"
+        variant: "secondary"
+        action: navigateBack()
+      }
+    ]
+  }
+}
+
+screen PaymentSuccessScreen {
+  title: "Payment Successful"
+  
+  layout: {
+    type: stack
+    spacing: 16
+    components: [
+      {
+        type: "icon"
+        name: "checkCircle"
+        color: "#00C48C"
+        size: "large"
+      },
+      {
+        type: "text"
+        text: "Your payment has been processed successfully"
+        style: "heading"
+      },
+      {
+        type: "summaryItem"
+        label: "Payment Reference"
+        value: "bind:paymentReference"
+      },
+      {
+        type: "summaryItem"
+        label: "Amount"
+        value: "bind:amount"
+      },
+      {
+        type: "button"
+        id: "doneButton"
+        label: "Done"
+        variant: "primary"
+        action: navigate(HomeScreen)
+      },
+      {
+        type: "button"
+        id: "makeAnotherButton"
+        label: "Make Another Payment"
+        variant: "secondary"
+        action: navigate(PaymentEntryScreen)
+      }
+    ]
+  }
+} 
