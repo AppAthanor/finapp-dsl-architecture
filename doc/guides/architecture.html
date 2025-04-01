@@ -110,22 +110,165 @@
         </ul>
     </div>
 
-    <div class="section" id="runtime">
-        <h3>3.3 Evaluation Runtime</h3>
+    <div class="section" id="overview">
+        <h2>1. Overview</h2>
         <p>
-            The evaluation runtime is the low-level execution engine that powers rule evaluation in the FinApp DSL. 
-            It provides the fundamental building blocks that the Business Rules Engine (Section 5) builds upon.
+            The FinApp DSL (Domain-Specific Language) provides a declarative way to express financial business rules, 
+            calculations, and customer journeys. It follows a clear separation between the WHAT (business requirements) 
+            and the HOW (implementation details), allowing business analysts and developers to work together efficiently.
         </p>
         <p>
-            Key responsibilities of the runtime include:
+            This architecture is designed to address key challenges in financial applications:
         </p>
         <ul>
-            <li>Expression evaluation in specific environments</li>
-            <li>Variable binding and resolution</li>
-            <li>Function application and composition</li>
-            <li>Region and segment-specific rule resolution</li>
+            <li>Supporting multiple regions with distinct regulatory requirements</li>
+            <li>Implementing different business rules for various customer segments</li>
+            <li>Maintaining consistency across complex financial calculations</li>
+            <li>Providing clear audit trails for business decisions</li>
+            <li>Enabling rapid adaptation to changing business requirements</li>
         </ul>
-        <pre><code>;; Example of runtime evaluation
+    </div>
+
+    <div class="section" id="bdd-features">
+        <h2>2. BDD Feature Files</h2>
+        <p>
+            The FinApp DSL uses Behavior-Driven Development (BDD) feature files to capture business requirements and acceptance criteria. These files serve as living documentation and executable specifications.
+        </p>
+        <pre><code>Feature: Loan Top-up for Pre-approved Customers
+  As a pre-approved loan customer
+  I want to borrow additional funds on my existing loan
+  So that I can meet my financial needs without applying for a new loan
+
+  Background:
+    Given I am authenticated in the mobile banking app
+    And I have an existing loan that is eligible for top-up
+    And my current region is set to "&lt;region&gt;"
+
+  Scenario: Successful loan top-up within limits
+    When I request a top-up of "&lt;amount&gt;"
+    Then I should see a confirmation screen
+    And the top-up amount should be added to my existing loan
+
+  Examples:
+    | region | amount  |
+    | UK     | £5000   |
+    | HK     | HK$50000|</code></pre>
+    </div>
+
+    <div class="section" id="core-components">
+        <h2>3. Core Components</h2>
+        
+        <div id="dsl-file">
+            <h3>3.1 .finapp DSL File</h3>
+            <p>
+                The .finapp file is where business requirements are expressed declaratively. It defines:
+            </p>
+            <ul>
+                <li>Business models and their relationships</li>
+                <li>Validation rules and constraints</li>
+                <li>UI components and layouts</li>
+                <li>Navigation flows and user journeys</li>
+                <li>API integrations and error handling</li>
+            </ul>
+            <pre><code>// Example .finapp file structure
+app LoanTopupApp {
+  models {
+    model Loan {
+      id: string
+      amount: number
+      term: number
+      status: string
+      customer: Customer
+    }
+    
+    model TopupOffer {
+      loan: Loan
+      maxAmount: number
+      minAmount: number
+      availableTerms: number[]
+    }
+  }
+
+  validation {
+    rule LoanEligibility {
+      when: loan.status == "active" 
+            && customer.creditScore >= 700
+      message: "Customer eligible for loan top-up"
+    }
+  }
+
+  screens {
+    screen TopupOfferScreen {
+      input: TopupOffer
+      layout: {
+        type: "stack"
+        children: [
+          {
+            type: "text"
+            text: "Available Top-up Amount"
+            style: "heading"
+          },
+          {
+            type: "amount"
+            value: offer.maxAmount
+            currency: region.currency
+          }
+        ]
+      }
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div id="implementation">
+            <h3>3.2 Clojure Implementation</h3>
+            <p>
+                The Clojure implementation provides the runtime behavior for the DSL specifications:
+            </p>
+            <ul>
+                <li>Business rule implementations</li>
+                <li>Data transformations and calculations</li>
+                <li>Integration with external systems</li>
+                <li>Platform-specific optimizations</li>
+            </ul>
+            <pre><code>;; Example Clojure implementation
+(ns finapp-dsl.loan-topup
+  (:require [finapp-dsl.core :as dsl]
+            [finapp-dsl.validation :as val]))
+
+(defn calculate-max-topup
+  [loan customer region]
+  (let [base-amount (* (:amount loan) 0.5)
+        credit-factor (/ (:credit_score customer) 1000)
+        regional-limit (get-in region [:rules :max_topup])]
+    (min (* base-amount credit-factor) 
+         regional-limit)))
+
+(defn create-topup-offer
+  [loan customer region]
+  (when (val/check-eligibility loan customer)
+    {:loan loan
+     :maxAmount (calculate-max-topup loan customer region)
+     :minAmount (get-in region [:rules :min_topup])
+     :availableTerms [12 24 36 48]}))</code></pre>
+        </div>
+
+        <div class="section" id="runtime">
+            <h3>3.3 Evaluation Runtime</h3>
+            <p>
+                The evaluation runtime is the low-level execution engine that powers rule evaluation in the FinApp DSL. 
+                It provides the fundamental building blocks that the Business Rules Engine (Section 5) builds upon.
+            </p>
+            <p>
+                Key responsibilities of the runtime include:
+            </p>
+            <ul>
+                <li>Expression evaluation in specific environments</li>
+                <li>Variable binding and resolution</li>
+                <li>Function application and composition</li>
+                <li>Region and segment-specific rule resolution</li>
+            </ul>
+            <pre><code>;; Example of runtime evaluation
 (require '[finapp-dsl.core :as dsl])
 
 ;; Create an evaluation environment
@@ -139,27 +282,53 @@
     [(dsl/make-variable "customer")]) 
   env)
 ;; => 750</code></pre>
-        <p>
-            The runtime focuses on the mechanics of evaluation, while the Business Rules Engine 
-            (Section 5) provides the complete system for defining and managing business rules.
-        </p>
-    </div>
+            <p>
+                The runtime focuses on the mechanics of evaluation, while the Business Rules Engine 
+                (Section 5) provides the complete system for defining and managing business rules.
+            </p>
+        </div>
 
-    <div class="section" id="business-rules">
-        <h2>5. Business Rules Engine</h2>
-        <p>
-            The Business Rules Engine builds on the Evaluation Runtime (Section 3.3) to provide a complete 
-            system for defining, managing, and executing business rules. While the runtime handles the 
-            low-level evaluation mechanics, the Business Rules Engine adds:
-        </p>
-        <ul>
-            <li>Declarative rule definitions in .finapp files</li>
-            <li>Rule composition and reuse</li>
-            <li>Versioning and audit trails</li>
-            <li>Testing and validation frameworks</li>
-            <li>Integration with the broader application architecture</li>
-        </ul>
-        <pre><code>// Rule definition in .finapp
+        <div class="section" id="separation-of-concerns">
+            <h2>4. Separation of Concerns</h2>
+            <p>
+                The FinApp DSL architecture maintains a clear separation between:
+            </p>
+            <ul>
+                <li><strong>WHAT</strong> - Business requirements in .finapp files</li>
+                <li><strong>HOW</strong> - Implementation details in Clojure</li>
+            </ul>
+            <p>
+                This separation allows:
+            </p>
+            <ul>
+                <li>Business analysts to focus on requirements without implementation details</li>
+                <li>Developers to optimize implementations without affecting business logic</li>
+                <li>Clear traceability between requirements and implementation</li>
+                <li>Independent evolution of business rules and technical implementation</li>
+            </ul>
+            <div class="note">
+                <p>
+                    The separation between WHAT and HOW is maintained through all aspects of the system,
+                    from business rules to error handling and UI components.
+                </p>
+            </div>
+        </div>
+
+        <div class="section" id="business-rules">
+            <h2>5. Business Rules Engine</h2>
+            <p>
+                The Business Rules Engine builds on the Evaluation Runtime (Section 3.3) to provide a complete 
+                system for defining, managing, and executing business rules. While the runtime handles the 
+                low-level evaluation mechanics, the Business Rules Engine adds:
+            </p>
+            <ul>
+                <li>Declarative rule definitions in .finapp files</li>
+                <li>Rule composition and reuse</li>
+                <li>Versioning and audit trails</li>
+                <li>Testing and validation frameworks</li>
+                <li>Integration with the broader application architecture</li>
+            </ul>
+            <pre><code>// Rule definition in .finapp
 rules {
   rule LoanEligibility {
     when: customer.credit_score >= 700 
@@ -180,23 +349,113 @@ rules {
                (>= income min-income))
       {:eligible true
        :max-amount (calculate-loan-limit customer)})))</code></pre>
-        <p>
-            The Business Rules Engine provides higher-level features that make rules:
-        </p>
-        <ul>
-            <li>Easy to understand and maintain</li>
-            <li>Consistent across the application</li>
-            <li>Testable and verifiable</li>
-            <li>Adaptable to changing business needs</li>
-        </ul>
-        <div class="note">
             <p>
-                <strong>Key Distinction:</strong> The Evaluation Runtime (3.3) provides the foundational 
-                mechanics for rule evaluation, while the Business Rules Engine builds on this foundation 
-                to provide a complete business rules management system.
+                The Business Rules Engine provides higher-level features that make rules:
             </p>
+            <ul>
+                <li>Easy to understand and maintain</li>
+                <li>Consistent across the application</li>
+                <li>Testable and verifiable</li>
+                <li>Adaptable to changing business needs</li>
+            </ul>
+            <div class="note">
+                <p>
+                    <strong>Key Distinction:</strong> The Evaluation Runtime (3.3) provides the foundational 
+                    mechanics for rule evaluation, while the Business Rules Engine builds on this foundation 
+                    to provide a complete business rules management system.
+                </p>
+            </div>
         </div>
-    </div>
+
+        <div class="section" id="error-handling">
+            <h2>6. Error Handling</h2>
+            <p>
+                Error handling is a critical aspect of any system, and the FinApp DSL architecture provides several mechanisms for handling errors.
+            </p>
+            <div id="error-categories">
+                <h3>6.1 Error Categories</h3>
+                <p>
+                    Errors in the FinApp DSL can be categorized into several types:
+                </p>
+                <ul>
+                    <li>Syntax errors</li>
+                    <li>Semantic errors</li>
+                    <li>Runtime errors</li>
+                    <li>Integration errors</li>
+                </ul>
+            </div>
+            <div id="error-hub">
+                <h3>6.2 Centralized Error Hub</h3>
+                <p>
+                    The FinApp DSL architecture includes a centralized error hub that collects and manages errors across the system.
+                </p>
+            </div>
+            <div id="error-handlers">
+                <h3>6.3 Error Handlers</h3>
+                <p>
+                    Error handlers are responsible for handling errors in the FinApp DSL. They can be categorized into several types:
+                </p>
+                <ul>
+                    <li>Syntax error handlers</li>
+                    <li>Semantic error handlers</li>
+                    <li>Runtime error handlers</li>
+                    <li>Integration error handlers</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section" id="extension-points">
+            <h2>7. Extension Points</h2>
+            <p>
+                The FinApp DSL architecture provides several extension points for customization:
+            </p>
+            <ul>
+                <li>Custom functions and operations</li>
+                <li>Platform-specific UI components</li>
+                <li>Integration adapters for external systems</li>
+                <li>Custom validation rules and error handlers</li>
+            </ul>
+            <pre><code>// Example of custom extension
+extensions {
+  functions {
+    calculateInterestRate(amount: number, term: number): number
+    formatCurrency(amount: number, region: string): string
+  }
+  
+  components {
+    CustomAmountInput: {
+      props: {
+        value: number
+        currency: string
+        onChange: (value: number) => void
+      }
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div class="section" id="best-practices">
+            <h2>8. Best Practices</h2>
+            <p>
+                When working with the FinApp DSL architecture:
+            </p>
+            <ul>
+                <li>Keep business rules in .finapp files simple and declarative</li>
+                <li>Use the Clojure implementation for complex calculations</li>
+                <li>Maintain clear separation between WHAT and HOW</li>
+                <li>Document all custom extensions and implementations</li>
+                <li>Write comprehensive tests at both DSL and implementation levels</li>
+            </ul>
+        </div>
+
+        <div class="section" id="references">
+            <h2>9. References</h2>
+            <ul>
+                <li><a href="../api/index.html">API Reference</a> - Complete API documentation</li>
+                <li><a href="../rfc/error-handling.html">Error Handling RFC</a> - Detailed error handling guide</li>
+                <li><a href="../examples/index.html">Examples</a> - Sample applications and use cases</li>
+            </ul>
+        </div>
 
     <footer>
         <p>FinApp DSL Documentation &copy; 2023 AppAthanor</p>
